@@ -4,22 +4,49 @@
   <title>SKU Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: Arial; padding: 40px; }
-    input { width: 400px; padding: 10px; }
-    button { padding: 10px 20px; }
-    table { margin-top: 20px; border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f2f2f2; }
+    body { font-family: Arial; background:#f5f6fa; padding:40px; }
+    h2 { color:#2d3436; }
+    input {
+      width: 500px;
+      padding: 12px;
+      font-size:16px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+    .card {
+      background:white;
+      padding:15px;
+      margin-top:15px;
+      border-radius:10px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    }
+    .highlight { background: yellow; font-weight: bold; }
+    .pagination { margin-top:20px; }
+    button {
+      padding:8px 14px;
+      border:none;
+      border-radius:6px;
+      background:#0984e3;
+      color:white;
+      cursor:pointer;
+    }
+    button:disabled { background:gray; }
+    #loader { display:none; margin-top:20px; }
   </style>
 </head>
 <body>
 
 <h2>SKU Search</h2>
 
-<input type="text" id="searchBox" placeholder="Paste SKU Name Here">
-<button onclick="search()">Search</button>
+<input type="text" id="searchBox" placeholder="Type SKU Name..." oninput="search()">
 
+<div id="loader">🔄 Loading...</div>
 <div id="results"></div>
+
+<div class="pagination">
+  <button onclick="prevPage()">Previous</button>
+  <button onclick="nextPage()">Next</button>
+</div>
 
 <script>
   const supabaseUrl = "https://rhxrtsjocqizhxqhbzgu.supabase.co";
@@ -28,14 +55,34 @@
   const { createClient } = supabase;
   const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
+  let currentPage = 0;
+  const pageSize = 10;
+  let currentKeyword = "";
+
   async function search() {
-    const keyword = document.getElementById("searchBox").value;
+    const keyword = document.getElementById("searchBox").value.trim();
+    currentKeyword = keyword;
+    currentPage = 0;
+    if (keyword.length < 2) {
+      document.getElementById("results").innerHTML = "";
+      return;
+    }
+    fetchData();
+  }
+
+  async function fetchData() {
+    document.getElementById("loader").style.display = "block";
+
+    const from = currentPage * pageSize;
+    const to = from + pageSize - 1;
 
     const { data, error } = await supabaseClient
-      .from('drugs_data')   // <-- your table name
+      .from('drugs_data')
       .select('*')
-      .ilike('sku_name', '%' + keyword + '%')
-      .limit(20);
+      .ilike('sku_name', '%' + currentKeyword + '%')
+      .range(from, to);
+
+    document.getElementById("loader").style.display = "none";
 
     if (error) {
       document.getElementById("results").innerHTML = error.message;
@@ -47,20 +94,36 @@
       return;
     }
 
-    let html = "<table><tr><th>SKU ID</th><th>SKU Name</th><th>Pack Size</th><th>MRP</th></tr>";
-
+    let html = "";
     data.forEach(row => {
-      html += "<tr>" +
-        "<td>" + row.sku_id + "</td>" +
-        "<td>" + row.sku_name + "</td>" +
-        "<td>" + row.pack_size + "</td>" +
-        "<td>" + row.mrp + "</td>" +
-      "</tr>";
+      html += `
+        <div class="card">
+          <strong>${highlight(row.sku_name)}</strong><br>
+          SKU ID: ${row.sku_id}<br>
+          Pack: ${row.pack_size}<br>
+          MRP: ₹${row.mrp}
+        </div>
+      `;
     });
 
-    html += "</table>";
-
     document.getElementById("results").innerHTML = html;
+  }
+
+  function highlight(text) {
+    const regex = new RegExp("(" + currentKeyword + ")", "gi");
+    return text.replace(regex, '<span class="highlight">$1</span>');
+  }
+
+  function nextPage() {
+    currentPage++;
+    fetchData();
+  }
+
+  function prevPage() {
+    if (currentPage > 0) {
+      currentPage--;
+      fetchData();
+    }
   }
 </script>
 
