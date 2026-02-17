@@ -31,7 +31,7 @@
     const keyword = document.getElementById("searchBox").value;
 
     const { data, error } = await supabaseClient
-      .from('products')
+      .from('drugs_data')
       .select('*')
       .ilike('sku_name', '%' + keyword + '%')
       .limit(20);
