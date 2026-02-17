@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SKU Search</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial; padding: 40px; }
+    input { width: 400px; padding: 10px; }
+    button { padding: 10px 20px; }
+    table { margin-top: 20px; border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+<h2>SKU Search</h2>
+
+<input type="text" id="searchBox" placeholder="Paste SKU Name Here">
+<button onclick="search()">Search</button>
+
+<div id="results"></div>
+
+<script>
+  const supabaseUrl = "PASTE_YOUR_PROJECT_URL_HERE";
+  const supabaseKey = "PASTE_YOUR_ANON_KEY_HERE";
+
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  async function search() {
+    const keyword = document.getElementById("searchBox").value;
+
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .ilike('sku_name', '%' + keyword + '%')
+      .limit(20);
+
+    if (error) {
+      document.getElementById("results").innerHTML = error.message;
+      return;
+    }
+
+    if (!data.length) {
+      document.getElementById("results").innerHTML = "No results found";
+      return;
+    }
+
+    let html = "<table><tr><th>SKU ID</th><th>SKU Name</th><th>Pack Size</th><th>MRP</th></tr>";
+
+    data.forEach(row => {
+      html += `<tr>
+        <td>${row.sku_id}</td>
+        <td>${row.sku_name}</td>
+        <td>${row.pack_size}</td>
+        <td>${row.mrp}</td>
+      </tr>`;
+    });
+
+    html += "</table>";
+    document.getElementById("results").innerHTML = html;
+  }
+</script>
+
+</body>
+</html>
