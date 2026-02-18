@@ -79,7 +79,7 @@
     const { data, error } = await supabaseClient
       .from('drugs_data')
       .select('*')
-      .ilike('sku_name', '%' + currentKeyword + '%')
+      .textSearch('search_vector', keyword)
       .range(from, to);
 
     document.getElementById("loader").style.display = "none";
