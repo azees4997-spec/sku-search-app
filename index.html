@@ -72,7 +72,10 @@
   const { data, error } = await supabaseClient
     .from('drugs_data')
     .select('sku_name, pack_size, sku_id, mrp')
-    .textSearch('search_vector', keyword)
+    .textSearch('search_vector', keyword, {
+  type: 'plain'
+})
+
     .limit(20);
 
   if (error) {
