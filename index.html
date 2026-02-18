@@ -70,13 +70,7 @@
   document.getElementById("results").innerHTML = "Loading...";
 
   const { data, error } = await supabaseClient
-    .from('drugs_data')
-    .select('sku_name, pack_size, sku_id, mrp')
-    .textSearch('search_vector', keyword, {
-  type: 'plain'
-})
-
-    .limit(20);
+    .rpc('fuzzy_search', { search_term: keyword });
 
   if (error) {
     document.getElementById("results").innerHTML = error.message;
@@ -101,7 +95,7 @@
   data.forEach(row => {
     html += `
       <div class="row">
-        <div>${row.sku_name}</div>
+        <div>${highlightText(row.sku_name, keyword)}</div>
         <div>${row.pack_size}</div>
         <div>${row.sku_id}</div>
         <div class="price">₹${row.mrp}</div>
@@ -114,10 +108,19 @@
   document.getElementById("results").innerHTML = html;
 }
 
-  function highlight(text) {
-    const regex = new RegExp("(" + currentKeyword + ")", "gi");
-    return text.replace(regex, '<span class="highlight">$1</span>');
-  }
+function highlightText(text, keyword) {
+  const words = keyword.split(" ");
+  let result = text;
+
+  words.forEach(word => {
+    if (word.length > 1) {
+      const regex = new RegExp(`(${word})`, "gi");
+      result = result.replace(regex, `<span style="background:yellow;font-weight:600;">$1</span>`);
+    }
+  });
+
+  return result;
+}
 
   function nextPage() {
     currentPage++;
