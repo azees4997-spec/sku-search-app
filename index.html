@@ -60,54 +60,56 @@
   let currentKeyword = "";
 
   async function search() {
-    const keyword = document.getElementById("searchBox").value.trim();
-    currentKeyword = keyword;
-    currentPage = 0;
-    if (keyword.length < 2) {
-      document.getElementById("results").innerHTML = "";
-      return;
-    }
-    fetchData();
+  const keyword = document.getElementById("searchBox").value.trim();
+
+  if (keyword.length < 2) {
+    document.getElementById("results").innerHTML = "";
+    return;
   }
 
-  async function fetchData() {
-    document.getElementById("loader").style.display = "block";
+  document.getElementById("results").innerHTML = "Loading...";
 
-    const from = currentPage * pageSize;
-    const to = from + pageSize - 1;
+  const { data, error } = await supabaseClient
+    .from('drugs_data')
+    .select('sku_name, pack_size, sku_id, mrp')
+    .textSearch('search_vector', keyword)
+    .limit(20);
 
-    const { data, error } = await supabaseClient
-      .from('drugs_data')
-      .select('*')
-      .textSearch('search_vector', keyword)
-      .range(from, to);
-
-    document.getElementById("loader").style.display = "none";
-
-    if (error) {
-      document.getElementById("results").innerHTML = error.message;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      document.getElementById("results").innerHTML = "No results found";
-      return;
-    }
-
-    let html = "";
-    data.forEach(row => {
-      html += `
-        <div class="card">
-          <strong>${highlight(row.sku_name)}</strong><br>
-          SKU ID: ${row.pack_size}<br>
-          Pack: ${row.sku_id}<br>
-          MRP: ₹${row.mrp}
-        </div>
-      `;
-    });
-
-    document.getElementById("results").innerHTML = html;
+  if (error) {
+    document.getElementById("results").innerHTML = error.message;
+    return;
   }
+
+  if (!data || data.length === 0) {
+    document.getElementById("results").innerHTML = "No results found";
+    return;
+  }
+
+  let html = `
+    <div class="results">
+      <div class="header">
+        <div>Item Name</div>
+        <div>Pack Size</div>
+        <div>SKU Code</div>
+        <div>MRP</div>
+      </div>
+  `;
+
+  data.forEach(row => {
+    html += `
+      <div class="row">
+        <div>${row.sku_name}</div>
+        <div>${row.pack_size}</div>
+        <div>${row.sku_id}</div>
+        <div class="price">₹${row.mrp}</div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+
+  document.getElementById("results").innerHTML = html;
+}
 
   function highlight(text) {
     const regex = new RegExp("(" + currentKeyword + ")", "gi");
