@@ -3,135 +3,146 @@
 <head>
   <title>SKU Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    body { font-family: Arial; background:#f5f6fa; padding:40px; }
-    h2 { color:#2d3436; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fa;
+      padding: 40px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
     input {
-      width: 500px;
+      width: 100%;
       padding: 12px;
-      font-size:16px;
-      border-radius:8px;
-      border:1px solid #ccc;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
     }
+
     .card {
-      background:white;
-      padding:15px;
-      margin-top:15px;
-      border-radius:10px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    .highlight { background: yellow; font-weight: bold; }
-    .pagination { margin-top:20px; }
-    button {
-      padding:8px 14px;
-      border:none;
-      border-radius:6px;
-      background:#0984e3;
-      color:white;
-      cursor:pointer;
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    button:disabled { background:gray; }
-    #loader { display:none; margin-top:20px; }
+
+    .name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .highlight {
+      background: yellow;
+      font-weight: bold;
+    }
+
+    .price {
+      font-weight: bold;
+      color: #2e7d32;
+    }
+
+    .loading {
+      color: gray;
+    }
   </style>
 </head>
 <body>
 
-<h2>SKU Search</h2>
+<h1>SKU Search</h1>
 
-<input type="text" id="searchBox" placeholder="Type SKU Name..." oninput="search()">
+<input type="text" id="searchBox" placeholder="Search SKU name..." oninput="search()" />
 
-<div id="loader">🔄 Loading...</div>
 <div id="results"></div>
 
-<div class="pagination">
-  <button onclick="prevPage()">Previous</button>
-  <button onclick="nextPage()">Next</button>
-</div>
-
 <script>
-  const supabaseUrl = "https://rhxrtsjocqizhxqhbzgu.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM";
-
   const { createClient } = supabase;
-  const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-  let currentPage = 0;
-  const pageSize = 100;
-  let currentKeyword = "";
+  const supabaseClient = createClient(
+    "https://rhxrtsjocqizhxqhbzgu.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
+  );
+
+  function highlight(text, keyword) {
+    const words = keyword.split(" ");
+    let result = text;
+
+    words.forEach(word => {
+      if (word.length > 1) {
+        const regex = new RegExp(`(${word})`, "gi");
+        result = result.replace(regex, `<span class="highlight">$1</span>`);
+      }
+    });
+
+    return result;
+  }
 
   async function search() {
-  const keyword = document.getElementById("searchBox").value.trim();
+    const keyword = document.getElementById("searchBox").value.trim();
 
-  if (keyword.length < 2) {
-    document.getElementById("results").innerHTML = "";
-    return;
-  }
-
-  document.getElementById("results").innerHTML = "Loading...";
-
-  const { data, error } = await supabaseClient
-    .rpc('fuzzy_search', { search_term: keyword });
-
-  if (error) {
-    document.getElementById("results").innerHTML = error.message;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    document.getElementById("results").innerHTML = "No results found";
-    return;
-  }
-
-  let html = `
-    <div class="results">
-      <div class="header">
-        <div>Item Name</div>
-        <div>Pack Size</div>
-        <div>SKU Code</div>
-        <div>MRP</div>
-      </div>
-  `;
-
-  data.forEach(row => {
-    html += `
-      <div class="row">
-        <div>${highlightText(row.sku_name, keyword)}</div>
-        <div>${row.pack_size}</div>
-        <div>${row.sku_id}</div>
-        <div class="price">₹${row.mrp}</div>
-      </div>
-    `;
-  });
-
-  html += `</div>`;
-
-  document.getElementById("results").innerHTML = html;
-}
-
-function highlightText(text, keyword) {
-  const words = keyword.split(" ");
-  let result = text;
-
-  words.forEach(word => {
-    if (word.length > 1) {
-      const regex = new RegExp(`(${word})`, "gi");
-      result = result.replace(regex, `<span style="background:yellow;font-weight:600;">$1</span>`);
+    if (keyword.length < 2) {
+      document.getElementById("results").innerHTML = "";
+      return;
     }
-  });
 
-  return result;
-}
+    document.getElementById("results").innerHTML =
+      "<div class='loading'>Searching...</div>";
 
-  function nextPage() {
-    currentPage++;
-    fetchData();
-  }
+    const words = keyword.split(" ");
 
-  function prevPage() {
-    if (currentPage > 0) {
-      currentPage--;
-      fetchData();
+    let query = supabaseClient
+      .from("drugs_data")
+      .select("sku_name, pack_size, sku_id, mrp")
+      .limit(20);
+
+    // Apply multi-word filtering
+    words.forEach(word => {
+      if (word.length > 1) {
+        query = query.ilike("sku_name", `%${word}%`);
+      }
+    });
+
+    const { data, error } = await query;
+
+    if (error) {
+      document.getElementById("results").innerHTML = error.message;
+      return;
     }
+
+    if (!data || data.length === 0) {
+      document.getElementById("results").innerHTML = "No results found";
+      return;
+    }
+
+    let html = "";
+
+    data.forEach(row => {
+      html += `
+        <div class="card">
+          <div class="name">${highlight(row.sku_name, keyword)}</div>
+          <div class="row">
+            <div>Pack: ${row.pack_size}</div>
+            <div>SKU: ${row.sku_id}</div>
+            <div class="price">₹${row.mrp}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById("results").innerHTML = html;
   }
 </script>
 
