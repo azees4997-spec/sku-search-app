@@ -15,21 +15,56 @@
       margin-bottom: 20px;
     }
 
+    .top-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
     input {
-      width: 100%;
+      flex: 1;
       padding: 12px;
       font-size: 16px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
     }
 
     .card {
-      background: white;
       padding: 16px;
       border-radius: 10px;
       margin-bottom: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      background: white;
+      border-left: 6px solid #ccc;
+    }
+
+    .drugs {
+      border-left-color: #1976d2;
+    }
+
+    .plazza {
+      border-left-color: #9c27b0;
+    }
+
+    .source {
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .drugs .source {
+      color: #1976d2;
+    }
+
+    .plazza .source {
+      color: #9c27b0;
     }
 
     .row {
@@ -64,7 +99,15 @@
 
 <h1>SKU Search</h1>
 
-<input type="text" id="searchBox" placeholder="Search SKU name..." oninput="search()" />
+<div class="top-bar">
+  <input type="text" id="searchBox" placeholder="Search SKU name..." />
+  
+  <select id="tableFilter">
+    <option value="all">All Data</option>
+    <option value="drugs">Drugs Data</option>
+    <option value="plazza">Plazza Data</option>
+  </select>
+</div>
 
 <div id="results"></div>
 
@@ -75,6 +118,18 @@
     "https://rhxrtsjocqizhxqhbzgu.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
   );
+
+  const searchInput = document.getElementById("searchBox");
+  const filterSelect = document.getElementById("tableFilter");
+
+  let debounceTimer;
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(search, 400); // 400ms delay
+  });
+
+  filterSelect.addEventListener("change", search);
 
   function highlight(text, keyword) {
     const words = keyword.split(" ");
@@ -91,7 +146,8 @@
   }
 
   async function search() {
-    const keyword = document.getElementById("searchBox").value.trim();
+    const keyword = searchInput.value.trim();
+    const filter = filterSelect.value;
 
     if (keyword.length < 2) {
       document.getElementById("results").innerHTML = "";
@@ -103,35 +159,54 @@
 
     const words = keyword.split(" ");
 
-    let query = supabaseClient
-      .from("drugs_data")
-      .select("sku_name, pack_size, sku_id, mrp")
-      .limit(20);
+    async function searchTable(tableName, sourceLabel, cssClass) {
+      let query = supabaseClient
+        .from(tableName)
+        .select("sku_name, pack_size, sku_id, mrp")
+        .limit(20);
 
-    // Apply multi-word filtering
-    words.forEach(word => {
-      if (word.length > 1) {
-        query = query.ilike("sku_name", `%${word}%`);
-      }
-    });
+      words.forEach(word => {
+        if (word.length > 1) {
+          query = query.ilike("sku_name", `%${word}%`);
+        }
+      });
 
-    const { data, error } = await query;
+      const { data } = await query;
 
-    if (error) {
-      document.getElementById("results").innerHTML = error.message;
-      return;
+      if (!data) return [];
+
+      return data.map(row => ({
+        ...row,
+        source: sourceLabel,
+        cssClass: cssClass
+      }));
     }
 
-    if (!data || data.length === 0) {
+    let results = [];
+
+    if (filter === "drugs") {
+      results = await searchTable("drugs_data", "Drugs Data", "drugs");
+    } 
+    else if (filter === "plazza") {
+      results = await searchTable("plazza_data", "Plazza Data", "plazza");
+    } 
+    else {
+      const drugs = await searchTable("drugs_data", "Drugs Data", "drugs");
+      const plazza = await searchTable("plazza_data", "Plazza Data", "plazza");
+      results = [...drugs, ...plazza];
+    }
+
+    if (!results.length) {
       document.getElementById("results").innerHTML = "No results found";
       return;
     }
 
     let html = "";
 
-    data.forEach(row => {
+    results.slice(0, 20).forEach(row => {
       html += `
-        <div class="card">
+        <div class="card ${row.cssClass}">
+          <div class="source">${row.source}</div>
           <div class="name">${highlight(row.sku_name, keyword)}</div>
           <div class="row">
             <div>Pack: ${row.pack_size}</div>
