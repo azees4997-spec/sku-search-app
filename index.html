@@ -1,77 +1,87 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sahimed | Advanced SKU Filter</title>
+  <title>Sahimed | Master SKU Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
     .container { max-width: 1100px; margin: 0 auto; }
-    .header { background: #1a237e; color: white; padding: 20px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header { background: #1a237e; color: white; padding: 15px; border-radius: 12px 12px 0 0; text-align: center; }
     
     .filter-panel { 
-      background: white; padding: 25px; border-radius: 0 0 12px 12px; 
+      background: white; padding: 20px; border-radius: 0 0 12px 12px; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;
     }
-    .grid-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    .grid-inputs { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
     
-    input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
 
-    .btn-row { display: flex; gap: 10px; justify-content: center; border-top: 1px solid #eee; padding-top: 20px; }
-    button { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
+    .btn-row { display: flex; gap: 10px; justify-content: center; padding-top: 15px; border-top: 1px solid #eee; }
+    button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
     .btn-search { background: #1a237e; color: white; }
     .btn-download { background: #2e7d32; color: white; }
     .btn-marked { background: #0288d1; color: white; }
 
+    .select-all-bar { background: #fff; padding: 10px 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; color: #444; }
+
     .card { 
-      background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;
-      display: flex; align-items: center; gap: 15px; border-left: 5px solid #ff9800;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      background: white; padding: 12px; border-radius: 10px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 15px; border-left: 5px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+    .dr-codes { border-left-color: #ff9800; }
+    .drugs_data { border-left-color: #1976d2; }
+    .plazza_data { border-left-color: #9c27b0; }
+
     .card-info { flex: 1; }
-    .p-name { font-weight: bold; font-size: 16px; color: #1a237e; }
-    .p-salt { font-size: 13px; color: #666; margin: 4px 0; }
-    .p-meta { display: flex; gap: 20px; font-size: 12px; color: #888; }
-    .price-tag { color: #2e7d32; font-weight: bold; font-size: 15px; }
-    .check-box { width: 22px; height: 22px; cursor: pointer; }
-    .loading { text-align: center; font-weight: bold; color: #1a237e; margin: 20px; }
+    .p-name { font-weight: bold; font-size: 15px; color: #1a237e; }
+    .p-meta { display: flex; gap: 15px; font-size: 12px; color: #777; margin-top: 4px; }
+    .price-tag { color: #2e7d32; font-weight: bold; }
+    .check-box { width: 20px; height: 20px; cursor: pointer; }
+    .loading { text-align: center; color: #1a237e; margin: 20px; font-weight: bold; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <h2>Sahimed Data Explorer</h2>
-  </div>
+  <div class="header"><h2>Sahimed Data Explorer</h2></div>
 
   <div class="filter-panel">
     <div class="grid-inputs">
       <div>
-        <label>PRODUCT NAME</label>
-        <input type="text" id="nameInput" placeholder="e.g. 1 AL AX">
+        <label>SEARCH PRODUCT (SUGGESTIONS)</label>
+        <input type="text" id="nameInput" list="suggestions" placeholder="Type to see matches...">
+        <datalist id="suggestions"></datalist>
+      </div>
+      <div>
+        <label>TABLE SELECTION</label>
+        <select id="tableSelect">
+          <option value="Dr codes">Dr codes (New)</option>
+          <option value="drugs_data">Drugs Data</option>
+          <option value="plazza_data">Plazza Data</option>
+          <option value="all">Search All Tables</option>
+        </select>
       </div>
       <div>
         <label>SALT COMPOSITION</label>
-        <input type="text" id="saltInput" placeholder="e.g. Levocetirizine">
+        <input type="text" id="saltInput" placeholder="e.g. Paracetamol">
       </div>
       <div>
-        <label>PRODUCT FORM</label>
-        <select id="formSelect">
-          <option value="">-- All Forms --</option>
-          <option value="Capsule">Capsule</option>
-          <option value="Tablet">Tablet</option>
-          <option value="Syrup">Syrup</option>
-          <option value="Ointment">Ointment</option>
-          <option value="Injection">Injection</option>
-        </select>
+        <label>FORM</label>
+        <input type="text" id="formInput" placeholder="e.g. Tablet">
       </div>
     </div>
 
     <div class="btn-row">
       <button class="btn-search" onclick="executeSearch()">Apply Filters</button>
-      <button class="btn-download" onclick="exportData(currentData, 'full_results')">Download Results</button>
+      <button class="btn-download" onclick="exportData(currentData, 'search_results')">Download View</button>
       <button class="btn-marked" onclick="exportMarked()">Download Marked (<span id="mCount">0</span>)</button>
     </div>
+  </div>
+
+  <div class="select-all-bar">
+    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Select All in Current View
   </div>
 
   <div id="displayArea"></div>
@@ -86,90 +96,121 @@
 
   let currentData = [];
   let selectedMap = new Map();
+  let debounceTimer;
+
+  // Suggestions Logic
+  document.getElementById('nameInput').addEventListener('input', (e) => {
+    const val = e.target.value;
+    clearTimeout(debounceTimer);
+    if(val.length < 2) return;
+    debounceTimer = setTimeout(() => fetchSuggestions(val), 300);
+  });
+
+  async function fetchSuggestions(val) {
+    const table = document.getElementById('tableSelect').value;
+    const activeTable = table === 'all' ? 'Dr codes' : table;
+    const nameCol = activeTable === 'Dr codes' ? 'Product Name' : 'sku_name';
+    
+    const { data } = await client.from(activeTable).select(nameCol).ilike(nameCol, `%${val}%`).limit(10);
+    if(data) {
+      const list = document.getElementById('suggestions');
+      list.innerHTML = data.map(item => `<option value="${item[nameCol]}">`).join('');
+    }
+  }
 
   async function executeSearch() {
     const nameVal = document.getElementById('nameInput').value.trim();
+    const tableVal = document.getElementById('tableSelect').value;
     const saltVal = document.getElementById('saltInput').value.trim();
-    const formVal = document.getElementById('formSelect').value;
+    const formVal = document.getElementById('formInput').value.trim();
 
-    const area = document.getElementById('displayArea');
-    area.innerHTML = '<div class="loading">Fetching data from Supabase...</div>';
+    document.getElementById('displayArea').innerHTML = '<div class="loading">Searching...</div>';
+    document.getElementById('selectAllBox').checked = false;
 
-    let query = client.from('Dr codes').select('*');
+    async function getTableData(tName) {
+      let query = client.from(tName).select('*');
+      const nameCol = tName === 'Dr codes' ? 'Product Name' : 'sku_name';
+      const formCol = tName === 'Dr codes' ? 'Product Form' : 'pack_size';
 
-    // Matching your Supabase Logic:
-    if (nameVal) query = query.ilike('Product Name', `%${nameVal}%`);
-    if (saltVal) query = query.ilike('salt_composition', `%${saltVal}%`);
-    if (formVal) query = query.ilike('Product Form', `%${formVal}%`);
-
-    const { data, error } = await query.limit(150);
-
-    if (error) {
-      area.innerHTML = 'Error: ' + error.message;
-      return;
+      if (nameVal) query = query.ilike(nameCol, `%${nameVal}%`);
+      if (saltVal) query = query.ilike('salt_composition', `%${saltVal}%`);
+      if (formVal) query = query.ilike(formCol, `%${formVal}%`);
+      
+      const { data } = await query.limit(100);
+      return (data || []).map(row => ({
+        ...row,
+        _tName: tName,
+        _dispId: row['Product ID'] || row.sku_id || row.id,
+        _dispName: row['Product Name'] || row.sku_name,
+        _dispForm: row['Product Form'] || row.pack_size || 'N/A',
+        _dispPrice: row.mrp || 0
+      }));
     }
 
-    currentData = data;
-    renderCards(data);
+    if (tableVal === 'all') {
+      const results = await Promise.all([getTableData('Dr codes'), getTableData('drugs_data'), getTableData('plazza_data')]);
+      currentData = results.flat();
+    } else {
+      currentData = await getTableData(tableVal);
+    }
+    renderCards();
   }
 
-  function renderCards(items) {
+  function renderCards() {
     const area = document.getElementById('displayArea');
-    if (items.length === 0) {
-      area.innerHTML = '<center>No items match those filters.</center>';
-      return;
-    }
+    if (currentData.length === 0) { area.innerHTML = '<center>No results found.</center>'; return; }
 
-    let html = '';
-    items.forEach((item, idx) => {
-      const isChecked = selectedMap.has(item['Product ID']) ? 'checked' : '';
-      html += `
-        <div class="card">
-          <input type="checkbox" class="check-box" ${isChecked} onchange="toggleItem(${idx})">
-          <div class="card-info">
-            <div class="p-name">${item['Product Name']}</div>
-            <div class="p-salt">${item['salt_composition'] || 'No salt data'}</div>
-            <div class="p-meta">
-              <span><strong>ID:</strong> ${item['Product ID']}</span>
-              <span><strong>Form:</strong> ${item['Product Form']}</span>
-              <span><strong>Marketer:</strong> ${item['Marketer']}</span>
-              <span class="price-tag">₹${item['mrp'] || 0}</span>
-            </div>
+    area.innerHTML = currentData.map((item, idx) => `
+      <div class="card ${item._tName}">
+        <input type="checkbox" class="check-box item-check" ${selectedMap.has(item._dispId) ? 'checked' : ''} onchange="toggleItem(${idx})">
+        <div class="card-info">
+          <div class="p-name">${item._dispName}</div>
+          <div class="p-meta">
+            <span><strong>Table:</strong> ${item._tName}</span>
+            <span><strong>Form:</strong> ${item._dispForm}</span>
+            <span class="price-tag">₹${item._dispPrice}</span>
           </div>
-        </div>`;
-    });
-    area.innerHTML = html;
+        </div>
+      </div>
+    `).join('');
   }
 
   window.toggleItem = function(idx) {
     const item = currentData[idx];
-    const id = item['Product ID'];
-    if (selectedMap.has(id)) selectedMap.delete(id);
-    else selectedMap.set(id, item);
-    document.getElementById('mCount').innerText = selectedMap.size;
+    if (selectedMap.has(item._dispId)) selectedMap.delete(item._dispId);
+    else selectedMap.set(item._dispId, item);
+    updateMarkedCount();
   };
 
-  window.exportData = function(dataArray, filename) {
-    if (dataArray.length === 0) return alert("No data to export!");
-    
-    const headers = Object.keys(dataArray[0]).join(",");
-    const rows = dataArray.map(obj => 
-      Object.values(obj).map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")
-    ).join("\n");
+  window.toggleSelectAll = function() {
+    const isChecked = document.getElementById('selectAllBox').checked;
+    currentData.forEach(item => {
+      if (isChecked) selectedMap.set(item._dispId, item);
+      else selectedMap.delete(item._dispId);
+    });
+    renderCards();
+    updateMarkedCount();
+  };
 
-    const csv = headers + "\n" + rows;
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+  function updateMarkedCount() {
+    document.getElementById('mCount').innerText = selectedMap.size;
+  }
+
+  window.exportData = function(dataArray, filename) {
+    if (dataArray.length === 0) return alert("No data!");
+    const clean = dataArray.map(({_tName, _dispId, _dispName, _dispForm, _dispPrice, ...rest}) => rest);
+    const headers = Object.keys(clean[0]).join(",");
+    const rows = clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([headers + "\n" + rows], { type: 'text/csv' });
     const a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', `${filename}.csv`);
+    a.href = URL.createObjectURL(blob);
+    a.download = `${filename}.csv`;
     a.click();
   };
 
   window.exportMarked = function() {
-    exportData(Array.from(selectedMap.values()), 'marked_sahimed_items');
+    exportData(Array.from(selectedMap.values()), 'marked_items');
   };
 </script>
-
 </body>
 </html>
