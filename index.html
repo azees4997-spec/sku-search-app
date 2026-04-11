@@ -1,40 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SKU Search</title>
+  <title>Sahimed | SKU & Salt Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f4f6fa;
-      padding: 40px;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
     }
 
     h1 {
+      color: #1a237e;
       margin-bottom: 20px;
     }
 
     .top-bar {
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      gap: 15px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       margin-bottom: 20px;
     }
 
-    input {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    select {
+    input, select {
       padding: 12px;
-      font-size: 16px;
+      font-size: 15px;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
+      outline: none;
     }
+
+    input:focus { border-color: #1976d2; }
+
+    #searchBox { flex: 2; min-width: 250px; }
+    #saltFilter, #formFilter { flex: 1; min-width: 150px; }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-download { background: #2e7d32; color: white; }
+    .btn-download:hover { background: #1b5e20; }
+    .btn-marked { background: #0288d1; color: white; }
+    .btn-marked:hover { background: #01579b; }
 
     .card {
       padding: 16px;
@@ -42,183 +77,248 @@
       margin-bottom: 12px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
       background: white;
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
       border-left: 6px solid #ccc;
     }
 
-    .drugs {
-      border-left-color: #1976d2;
-    }
+    /* Source Specific Colors */
+    .dr-codes { border-left-color: #ff9800; }
+    .drugs { border-left-color: #1976d2; }
+    .plazza { border-left-color: #9c27b0; }
 
-    .plazza {
-      border-left-color: #9c27b0;
-    }
+    .card-content { flex: 1; }
 
     .source {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
-      margin-bottom: 6px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
     }
 
-    .drugs .source {
-      color: #1976d2;
-    }
+    .dr-codes .source { color: #ff9800; }
+    .drugs .source { color: #1976d2; }
+    .plazza .source { color: #9c27b0; }
 
-    .plazza .source {
-      color: #9c27b0;
-    }
+    .name { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+    .highlight { background: #fff176; padding: 0 2px; }
 
-    .row {
-      display: flex;
-      justify-content: space-between;
+    .details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
-      flex-wrap: wrap;
+      font-size: 13px;
+      color: #666;
     }
 
-    .name {
-      font-weight: 600;
-      font-size: 15px;
-      margin-bottom: 8px;
+    .price { font-weight: bold; color: #2e7d32; font-size: 15px; }
+
+    .checkbox-custom {
+      width: 20px;
+      height: 20px;
+      margin-top: 5px;
+      cursor: pointer;
     }
 
-    .highlight {
-      background: yellow;
-      font-weight: bold;
-    }
-
-    .price {
-      font-weight: bold;
-      color: #2e7d32;
-    }
-
-    .loading {
-      color: gray;
-    }
+    .loading { text-align: center; padding: 20px; color: #666; }
   </style>
 </head>
 <body>
 
-<h1>SKU Search</h1>
+<div class="container">
+  <h1>Sahimed SKU Explorer</h1>
 
-<div class="top-bar">
-  <input type="text" id="searchBox" placeholder="Search SKU name..." />
-  
-  <select id="tableFilter">
-    <option value="all">All Data</option>
-    <option value="drugs">Drugs Data</option>
-    <option value="plazza">Plazza Data</option>
-  </select>
+  <div class="top-bar">
+    <div class="input-row">
+      <input type="text" id="searchBox" placeholder="Search Product Name..." />
+      <select id="tableFilter">
+        <option value="dr_codes">Dr codes</option>
+        <option value="drugs">Drugs Data</option>
+        <option value="plazza">Plazza Data</option>
+        <option value="all">All Data</option>
+      </select>
+    </div>
+    
+    <div class="input-row">
+      <input type="text" id="saltFilter" placeholder="Salt Composition (e.g. Paracetamol)" />
+      <input type="text" id="formFilter" placeholder="Form (e.g. Tablet)" />
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-download" onclick="downloadCSV(currentResults, 'search_results')">Download Current View</button>
+      <button class="btn-marked" onclick="downloadMarked()">Download Marked (<span id="markedCount">0</span>)</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
 </div>
-
-<div id="results"></div>
 
 <script>
   const { createClient } = supabase;
 
+  // Supabase Configuration
   const supabaseClient = createClient(
     "https://rhxrtsjocqizhxqhbzgu.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
   );
 
-  const searchInput = document.getElementById("searchBox");
-  const filterSelect = document.getElementById("tableFilter");
-
+  let currentResults = [];
+  let markedItems = new Map();
   let debounceTimer;
 
-  searchInput.addEventListener("input", () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(search, 400); // 400ms delay
-  });
+  const searchInput = document.getElementById("searchBox");
+  const saltInput = document.getElementById("saltFilter");
+  const formInput = document.getElementById("formFilter");
+  const filterSelect = document.getElementById("tableFilter");
 
+  // Event Listeners
+  [searchInput, saltInput, formInput].forEach(el => {
+    el.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(search, 400);
+    });
+  });
   filterSelect.addEventListener("change", search);
 
   function highlight(text, keyword) {
-    const words = keyword.split(" ");
-    let result = text;
-
-    words.forEach(word => {
-      if (word.length > 1) {
-        const regex = new RegExp(`(${word})`, "gi");
-        result = result.replace(regex, `<span class="highlight">$1</span>`);
-      }
-    });
-
-    return result;
+    if (!keyword) return text;
+    const regex = new RegExp(`(${keyword})`, "gi");
+    return text.replace(regex, `<span class="highlight">$1</span>`);
   }
 
   async function search() {
     const keyword = searchInput.value.trim();
+    const salt = saltInput.value.trim();
+    const form = formInput.value.trim();
     const filter = filterSelect.value;
 
-    if (keyword.length < 2) {
+    if (keyword.length < 2 && salt.length < 2 && form.length < 2) {
       document.getElementById("results").innerHTML = "";
       return;
     }
 
-    document.getElementById("results").innerHTML =
-      "<div class='loading'>Searching...</div>";
+    document.getElementById("results").innerHTML = "<div class='loading'>Searching Supabase...</div>";
 
-    const words = keyword.split(" ");
+    async function fetchData(tableName, sourceLabel, cssClass) {
+      // Use double quotes for table names with spaces like "Dr codes"
+      let query = supabaseClient.from(tableName).select("*");
 
-    async function searchTable(tableName, sourceLabel, cssClass) {
-      let query = supabaseClient
-        .from(tableName)
-        .select("sku_name, pack_size, sku_id, mrp")
-        .limit(20);
+      if (keyword) {
+        const nameCol = (tableName === "Dr codes") ? "Product Name" : "sku_name";
+        query = query.ilike(nameCol, `%${keyword}%`);
+      }
+      if (salt) query = query.ilike("salt_composition", `%${salt}%`);
+      if (form) {
+        const formCol = (tableName === "Dr codes") ? "Product Form" : "pack_size"; 
+        query = query.ilike(formCol, `%${form}%`);
+      }
 
-      words.forEach(word => {
-        if (word.length > 1) {
-          query = query.ilike("sku_name", `%${word}%`);
-        }
-      });
-
-      const { data } = await query;
-
-      if (!data) return [];
-
+      const { data, error } = await query.limit(50);
+      if (error) { console.error(error); return []; }
+      
       return data.map(row => ({
         ...row,
-        source: sourceLabel,
-        cssClass: cssClass
+        sourceLabel,
+        cssClass,
+        displayName: row["Product Name"] || row.sku_name,
+        displayId: row["Product ID"] || row.sku_id,
+        displayPrice: row.mrpp || row.mrp || 0,
+        displayForm: row["Product Form"] || row.pack_size || "N/A"
       }));
     }
 
     let results = [];
-
-    if (filter === "drugs") {
-      results = await searchTable("drugs_data", "Drugs Data", "drugs");
-    } 
-    else if (filter === "plazza") {
-      results = await searchTable("plazza_data", "Plazza Data", "plazza");
-    } 
-    else {
-      const drugs = await searchTable("drugs_data", "Drugs Data", "drugs");
-      const plazza = await searchTable("plazza_data", "Plazza Data", "plazza");
-      results = [...drugs, ...plazza];
+    if (filter === "dr_codes") {
+      results = await fetchData("Dr codes", "Dr Codes", "dr-codes");
+    } else if (filter === "drugs") {
+      results = await fetchData("drugs_data", "Drugs Data", "drugs");
+    } else if (filter === "plazza") {
+      results = await fetchData("plazza_data", "Plazza Data", "plazza");
+    } else {
+      const r1 = await fetchData("Dr codes", "Dr Codes", "dr-codes");
+      const r2 = await fetchData("drugs_data", "Drugs Data", "drugs");
+      results = [...r1, ...r2];
     }
 
-    if (!results.length) {
-      document.getElementById("results").innerHTML = "No results found";
+    currentResults = results;
+    render(results, keyword);
+  }
+
+  function render(results, keyword) {
+    const container = document.getElementById("results");
+    if (results.length === 0) {
+      container.innerHTML = "No matches found.";
       return;
     }
 
     let html = "";
-
-    results.slice(0, 20).forEach(row => {
+    results.forEach((row, index) => {
+      const isChecked = markedItems.has(row.displayId) ? "checked" : "";
       html += `
         <div class="card ${row.cssClass}">
-          <div class="source">${row.source}</div>
-          <div class="name">${highlight(row.sku_name, keyword)}</div>
-          <div class="row">
-            <div>Pack: ${row.pack_size}</div>
-            <div>SKU: ${row.sku_id}</div>
-            <div class="price">₹${row.mrp}</div>
+          <input type="checkbox" class="checkbox-custom" ${isChecked} onchange="toggleMark(${index})">
+          <div class="card-content">
+            <div class="source">${row.sourceLabel}</div>
+            <div class="name">${highlight(row.displayName, keyword)}</div>
+            <div class="details">
+              <div><strong>ID:</strong> ${row.displayId}</div>
+              <div><strong>Form:</strong> ${row.displayForm}</div>
+              <div><strong>Salt:</strong> ${row.salt_composition || 'N/A'}</div>
+              <div class="price">₹${row.displayPrice}</div>
+            </div>
           </div>
         </div>
       `;
     });
-
-    document.getElementById("results").innerHTML = html;
+    container.innerHTML = html;
   }
+
+  window.toggleMark = function(index) {
+    const item = currentResults[index];
+    const id = item.displayId;
+    if (markedItems.has(id)) {
+      markedItems.delete(id);
+    } else {
+      markedItems.set(id, item);
+    }
+    document.getElementById("markedCount").innerText = markedItems.size;
+  };
+
+  window.downloadCSV = function(data, filename) {
+    if (!data || data.length === 0) {
+      alert("No data available to download.");
+      return;
+    }
+
+    // Prepare headers - removing the UI-specific keys we added
+    const cleanData = data.map(({cssClass, sourceLabel, displayName, displayId, displayPrice, displayForm, ...rest}) => rest);
+    const headers = Object.keys(cleanData[0]);
+    
+    const csvRows = [
+      headers.join(','), // Header row
+      ...cleanData.map(row => headers.map(fieldName => {
+        let value = row[fieldName] || '';
+        // Escape quotes and wrap in quotes to handle commas within text
+        return `"${String(value).replace(/"/g, '""')}"`;
+      }).join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${filename}_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  window.downloadMarked = function() {
+    const data = Array.from(markedItems.values());
+    downloadCSV(data, 'marked_items');
+  };
 </script>
 
 </body>
