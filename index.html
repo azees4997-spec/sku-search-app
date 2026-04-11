@@ -1,98 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sahimed | Pro SKU Search</title>
+  <title>Sahimed | Master SKU Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    body { font-family: 'Inter', sans-serif; background: #f4f7f9; margin: 0; padding: 20px; }
     .container { max-width: 1200px; margin: 0 auto; }
     
-    /* Header & Table Select Top Right */
-    .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .project-title { font-size: 24px; font-weight: 800; color: #1e3a8a; margin: 0; }
-    .table-picker { background: #fff; padding: 8px 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; cursor: pointer; }
+    .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .project-title { font-size: 26px; font-weight: 800; color: #1e3a8a; }
+    .table-picker { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-weight: 600; background: white; }
 
-    /* Search Bar Layout */
-    .search-panel { 
-      background: white; padding: 25px; border-radius: 12px; 
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 20px;
-    }
-    .search-grid { display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 15px; align-items: end; }
+    .search-panel { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .search-grid { display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 15px; }
     
-    label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border 0.2s; }
-    input:focus { outline: none; border-color: #3b82f6; ring: 2px #3b82f6; }
+    label { font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 5px; display: block; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
 
-    .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid #f1f5f9; pt: 20px; }
-    .stats { font-size: 13px; color: #64748b; font-weight: 500; }
-    
-    button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; pt: 15px; border-top: 1px solid #eee; }
+    button { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
     .btn-primary { background: #1e3a8a; color: white; }
-    .btn-primary:hover { background: #1e40af; }
     .btn-green { background: #10b981; color: white; }
     .btn-blue { background: #3b82f6; color: white; }
 
-    /* Results */
-    .select-all-bar { display: flex; align-items: center; gap: 10px; padding: 10px; font-size: 13px; font-weight: 600; }
-    .card { 
-      background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;
-      display: flex; align-items: center; gap: 15px; border-left: 5px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+    .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; border-left: 5px solid #e2e8f0; transition: 0.2s; }
     .dr-codes { border-left-color: #f59e0b; }
     .drugs_data { border-left-color: #3b82f6; }
-    .card-info { flex: 1; }
+    .plazza_data { border-left-color: #8b5cf6; }
+    
+    .highlight { background: #fef08a; font-weight: bold; padding: 0 2px; border-radius: 2px; }
     .p-name { font-weight: 700; font-size: 16px; color: #1e3a8a; }
-    .p-salt { font-size: 13px; color: #475569; margin: 4px 0; background: #f1f5f9; display: inline-block; padding: 2px 8px; border-radius: 4px; }
-    .p-meta { display: flex; gap: 20px; font-size: 12px; color: #94a3b8; margin-top: 5px; }
-    .price-tag { color: #059669; font-weight: 800; }
-    .check-box { width: 20px; height: 20px; cursor: pointer; }
-    .loading { text-align: center; padding: 40px; font-weight: 600; color: #64748b; }
+    .p-salt { font-size: 13px; color: #475569; margin: 5px 0; }
+    .p-meta { display: flex; gap: 15px; font-size: 12px; color: #94a3b8; }
+    .price-tag { color: #059669; font-weight: 800; font-size: 16px; }
+    .check-box { width: 22px; height: 22px; cursor: pointer; }
+    .loading { text-align: center; padding: 40px; font-weight: bold; color: #1e3a8a; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <div class="header-section">
-    <h1 class="project-title">Sahimed.com</h1>
+    <div class="project-title">Sahimed SKU Explorer</div>
     <select id="tableSelect" class="table-picker">
+      <option value="all">Search All Tables</option>
       <option value="Dr codes">Dr codes</option>
       <option value="drugs_data">Drugs Data</option>
       <option value="plazza_data">Plazza Data</option>
-      <option value="all">Search All</option>
     </select>
   </div>
 
   <div class="search-panel">
     <div class="search-grid">
       <div>
-        <label>Product Name (Press Enter)</label>
-        <input type="text" id="nameInput" placeholder="Type name and hit Enter..." onkeypress="handleKeyPress(event)">
+        <label>Product Name</label>
+        <input type="text" id="nameInput" placeholder="Enter Product Name..." onkeydown="if(event.key==='Enter') executeSearch()">
       </div>
       <div>
-        <label>Composition / Salt</label>
-        <input type="text" id="saltInput" placeholder="Search by salt..." onkeypress="handleKeyPress(event)">
+        <label>Molecule / Salt Composition</label>
+        <input type="text" id="saltInput" list="saltSuggest" placeholder="Enter Molecule..." onkeydown="if(event.key==='Enter') executeSearch()">
+        <datalist id="saltSuggest"></datalist>
       </div>
       <div>
-        <label>Form (Dynamic Filter)</label>
-        <select id="formFilter" onchange="filterResultsByForm()">
+        <label>Form Filter (Auto-populated)</label>
+        <select id="formFilter" onchange="applyLocalFilter()">
           <option value="all">All Forms</option>
         </select>
       </div>
     </div>
 
     <div class="action-row">
-      <div class="stats">Showing <span id="resCount">0</span> items | Marked: <span id="mCount">0</span></div>
-      <div style="display: flex; gap: 10px;">
+      <div id="status">Ready</div>
+      <div style="display:flex; gap:10px;">
         <button class="btn-primary" onclick="executeSearch()">Search</button>
-        <button class="btn-green" onclick="exportData(filteredData, 'view_export')">Download View</button>
-        <button class="btn-blue" onclick="exportMarked()">Download Marked</button>
+        <button class="btn-green" onclick="exportData(filteredData, 'sahimed_export')">Download View</button>
+        <button class="btn-blue" onclick="exportMarked()">Download Marked (<span id="mCount">0</span>)</button>
       </div>
     </div>
-  </div>
-
-  <div class="select-all-bar">
-    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Mark All Visible
   </div>
 
   <div id="displayArea"></div>
@@ -105,12 +89,15 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
   );
 
-  let rawResults = [];   // Master data from DB
-  let filteredData = []; // Data after dropdown form filter
-  let selectedMap = new Map();
+  let masterData = [];
+  let filteredData = [];
+  let markedItems = new Map();
 
-  function handleKeyPress(e) {
-    if (e.key === 'Enter') executeSearch();
+  // Highlight helper
+  function highlight(text, query) {
+    if (!query || !text) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.toString().replace(regex, '<span class="highlight">$1</span>');
   }
 
   async function executeSearch() {
@@ -120,88 +107,37 @@
 
     document.getElementById('displayArea').innerHTML = '<div class="loading">Searching Database...</div>';
     
-    async function fetchTable(tName) {
+    async function fetchFromTable(tName) {
       let query = client.from(tName).select('*');
       const nCol = tName === 'Dr codes' ? 'Product Name' : 'sku_name';
+      
       if (nameVal) query = query.ilike(nCol, `%${nameVal}%`);
       if (saltVal) query = query.ilike('salt_composition', `%${saltVal}%`);
       
-      const { data } = await query.limit(200);
-      return (data || []).map(r => ({
+      const { data, error } = await query.limit(200);
+      if (error) { console.error(error); return []; }
+      
+      return data.map(r => ({
         ...r,
         _t: tName,
         _id: r['Product ID'] || r.sku_id || r.id,
-        _n: r['Product Name'] || r.sku_name,
+        _n: r['Product Name'] || r.sku_name || '',
+        _s: r.salt_composition || '',
         _f: r['Product Form'] || r.pack_size || 'N/A',
-        _p: r.mrp || 0
+        _p: r.mrp || r.mrpp || 0
       }));
     }
 
     if (tableVal === 'all') {
-      const all = await Promise.all([fetchTable('Dr codes'), fetchTable('drugs_data'), fetchTable('plazza_data')]);
-      rawResults = all.flat();
+      const results = await Promise.all([fetchFromTable('Dr codes'), fetchFromTable('drugs_data'), fetchFromTable('plazza_data')]);
+      masterData = results.flat();
     } else {
-      rawResults = await fetchTable(tableVal);
+      masterData = await fetchFromTable(tableVal);
     }
 
-    populateFormDropdown();
-    filteredData = [...rawResults];
-    renderCards();
+    updateFormDropdown();
+    filteredData = [...masterData];
+    render();
   }
 
-  function populateFormDropdown() {
-    const dropdown = document.getElementById('formFilter');
-    const forms = [...new Set(rawResults.map(i => i._f))].sort();
-    dropdown.innerHTML = '<option value="all">All Forms</option>' + 
-      forms.map(f => `<option value="${f}">${f}</option>`).join('');
-  }
-
-  function filterResultsByForm() {
-    const val = document.getElementById('formFilter').value;
-    filteredData = val === 'all' ? [...rawResults] : rawResults.filter(i => i._f === val);
-    renderCards();
-  }
-
-  function renderCards() {
-    const area = document.getElementById('displayArea');
-    document.getElementById('resCount').innerText = filteredData.length;
-    
-    if (filteredData.length === 0) { area.innerHTML = '<div class="loading">No matches found.</div>'; return; }
-
-    area.innerHTML = filteredData.map((item, idx) => `
-      <div class="card ${item._t}">
-        <input type="checkbox" class="check-box" ${selectedMap.has(item._id) ? 'checked' : ''} onchange="toggleItem(${idx})">
-        <div class="card-info">
-          <div class="p-name">${item._n}</div>
-          <div class="p-salt">${item.salt_composition || 'N/A'}</div>
-          <div class="p-meta">
-            <span><strong>Table:</strong> ${item._t}</span>
-            <span><strong>Form:</strong> ${item._f}</span>
-            <span><strong>ID:</strong> ${item._id}</span>
-            <span class="price-tag">₹${item._p}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  window.toggleItem = function(idx) {
-    const item = filteredData[idx];
-    if (selectedMap.has(item._id)) selectedMap.delete(item._id);
-    else selectedMap.set(item._id, item);
-    document.getElementById('mCount').innerText = selectedMap.size;
-  };
-
-  window.toggleSelectAll = function() {
-    const checked = document.getElementById('selectAllBox').checked;
-    filteredData.forEach(item => {
-      if (checked) selectedMap.set(item._id, item);
-      else selectedMap.delete(item._id);
-    });
-    renderCards();
-    document.getElementById('mCount').innerText = selectedMap.size;
-  };
-
-  window.exportData = function(arr, name) {
-    if (!arr.length) return alert("No data to export");
-    const clean = arr
+  function updateForm
