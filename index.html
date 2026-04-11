@@ -1,88 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sahimed SKU Master</title>
+  <title>Sahimed Data Manager</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: 'Inter', system-ui, sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #0f172a; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    
-    .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .project-title { font-size: 28px; font-weight: 900; color: #1e3a8a; letter-spacing: -1px; }
-    .table-picker { padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; background: white; cursor: pointer; }
+    :root {
+      --primary: #1e3a8a;
+      --primary-hover: #1e40af;
+      --success: #059669;
+      --info: #2563eb;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
 
-    .search-panel { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    .search-grid { display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 15px; align-items: end; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
+    .container { max-width: 1100px; margin: 0 auto; }
     
-    label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: all 0.2s; }
-
-    .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
-    .stats { font-size: 13px; font-weight: 600; color: #475569; }
+    /* Top Control Bar */
+    .controls-wrapper { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 24px; border: 1px solid var(--border); }
     
-    button { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
-    .btn-primary { background: #1e3a8a; color: white; }
-    .btn-green { background: #059669; color: white; }
-    .btn-blue { background: #2563eb; color: white; }
+    .top-row { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+    .table-picker { padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border); font-weight: 600; background: #fff; cursor: pointer; outline: none; transition: border 0.2s; }
+    .table-picker:focus { border-color: var(--info); }
 
-    .select-all-bar { background: #fff; padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px; border: 1px solid #e2e8f0; }
-
-    .card { background: white; padding: 16px; border-radius: 10px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border-left: 6px solid #e2e8f0; }
-    .dr-codes { border-left-color: #f59e0b; }
-    .drugs_data { border-left-color: #3b82f6; }
-    .plazza_data { border-left-color: #8b5cf6; }
+    .search-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 16px; margin-bottom: 20px; }
     
-    .highlight { background: #fef08a; font-weight: bold; }
-    .p-name { font-weight: 700; font-size: 17px; color: #1e3a8a; }
-    .price-tag { color: #059669; font-weight: 800; font-size: 16px; }
-    .check-box { width: 22px; height: 22px; cursor: pointer; accent-color: #1e3a8a; }
-    .status-msg { text-align: center; padding: 40px; font-weight: 700; color: #64748b; }
+    label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+    input, select { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; transition: all 0.2s; background: #fcfcfc; box-sizing: border-box; }
+    input:focus, select:focus { background: #fff; border-color: var(--info); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); outline: none; }
+
+    .action-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--border); }
+    
+    /* Stats & Select All Combined */
+    .status-group { display: flex; align-items: center; gap: 20px; }
+    .stat-badge { font-size: 13px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
+    .select-all-wrapper { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--primary); }
+    
+    .button-group { display: flex; gap: 12px; }
+    button { padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+    button:active { transform: translateY(1px); }
+    .btn-search { background: var(--primary); color: white; }
+    .btn-search:hover { background: var(--primary-hover); }
+    .btn-view { background: var(--success); color: white; }
+    .btn-view:hover { opacity: 0.9; }
+    .btn-marked { background: var(--info); color: white; }
+
+    /* Result Cards */
+    .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 20px; border: 1px solid var(--border); transition: border 0.2s, transform 0.2s; }
+    .card:hover { border-color: #cbd5e1; transform: translateY(-1px); }
+    .card.dr-codes { border-left: 6px solid #f59e0b; }
+    .card.drugs_data { border-left: 6px solid #3b82f6; }
+    .card.plazza_data { border-left: 6px solid #8b5cf6; }
+    
+    .highlight { background: #fef08a; padding: 0 2px; border-radius: 2px; }
+    .card-body { flex: 1; }
+    .p-name { font-weight: 700; font-size: 17px; color: var(--primary); margin-bottom: 4px; }
+    .p-salt { font-size: 13px; color: #475569; margin-bottom: 8px; }
+    .p-footer { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); }
+    .price-tag { color: var(--success); font-weight: 800; font-size: 16px; margin-left: auto; }
+    
+    .check-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
+    .empty-state { text-align: center; padding: 60px; color: var(--text-muted); font-weight: 500; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header-section">
-    <div class="project-title">Sahimed.com</div>
-    <select id="tableSelect" class="table-picker">
-      <option value="all">Search All Tables</option>
-      <option value="Dr codes">Dr codes</option>
-      <option value="drugs_data">Drugs Data</option>
-      <option value="plazza_data">Plazza Data</option>
-    </select>
-  </div>
+  <div class="controls-wrapper">
+    <div class="top-row">
+      <select id="tableSelect" class="table-picker" tabindex="4">
+        <option value="all">All Tables</option>
+        <option value="Dr codes">Dr codes</option>
+        <option value="drugs_data">Drugs Data</option>
+        <option value="plazza_data">Plazza Data</option>
+      </select>
+    </div>
 
-  <div class="search-panel">
     <div class="search-grid">
       <div>
         <label>Product Name</label>
-        <input type="text" id="nameInput" placeholder="Enter name..." onkeydown="handleKeyPress(event)">
+        <input type="text" id="nameInput" placeholder="Press Enter to search..." tabindex="1" onkeydown="handleKey(event)">
       </div>
       <div>
         <label>Molecule / Salt</label>
-        <input type="text" id="saltInput" placeholder="Enter salt..." onkeydown="handleKeyPress(event)">
+        <input type="text" id="saltInput" placeholder="Highlight matches..." tabindex="2" onkeydown="handleKey(event)">
       </div>
       <div>
         <label>Form Filter</label>
-        <select id="formFilter" onchange="applyLocalFilter()">
+        <select id="formFilter" tabindex="3" onchange="applyLocalFilter()">
           <option value="all">All Forms</option>
         </select>
       </div>
     </div>
 
-    <div class="action-row">
-      <div class="stats">Matches: <span id="resCount">0</span> | Marked: <span id="mCount">0</span></div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-primary" onclick="executeSearch()">Search</button>
-        <button class="btn-green" onclick="exportData(filteredData, 'view_export')">Download View</button>
-        <button class="btn-blue" onclick="exportMarked()">Download Marked</button>
+    <div class="action-bar">
+      <div class="status-group">
+        <div class="stat-badge">Matches: <span id="resCount">0</span></div>
+        <div class="stat-badge">Marked: <span id="mCount">0</span></div>
+        <label class="select-all-wrapper">
+          <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Select All
+        </label>
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-search" onclick="executeSearch()">Search</button>
+        <button class="btn-view" onclick="exportData(filteredData, 'view_export')">Download View</button>
+        <button class="btn-marked" onclick="exportMarked()">Download Marked</button>
       </div>
     </div>
-  </div>
-
-  <div class="select-all-bar">
-    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> 
-    <span>Select All Visible Results</span>
   </div>
 
   <div id="displayArea"></div>
@@ -99,11 +126,11 @@
   let filteredData = [];
   let markedItems = new Map();
 
-  window.handleKeyPress = (e) => { if (e.key === 'Enter') window.executeSearch(); };
+  window.handleKey = (e) => { if (e.key === 'Enter') executeSearch(); };
 
   function highlight(text, q) {
     if (!q || !text) return text;
-    const regex = new RegExp(`(${q})`, 'gi');
+    const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
     return text.toString().replace(regex, '<span class="highlight">$1</span>');
   }
 
@@ -112,7 +139,7 @@
     const salt = document.getElementById('saltInput').value.trim();
     const table = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="status-msg">Searching...</div>';
+    document.getElementById('displayArea').innerHTML = '<div class="empty-state">Searching database...</div>';
     document.getElementById('selectAllBox').checked = false;
     
     async function fetchTable(t) {
@@ -120,7 +147,7 @@
       const nCol = t === 'Dr codes' ? 'Product Name' : 'sku_name';
       if (name) query = query.ilike(nCol, `%${name}%`);
       if (salt) query = query.ilike('salt_composition', `%${salt}%`);
-      const { data } = await query.limit(400);
+      const { data } = await query.limit(500);
       return (data || []).map(r => ({
         ...r, _t: t, _id: r['Product ID'] || r.sku_id || r.id,
         _n: r['Product Name'] || r.sku_name || '',
@@ -141,14 +168,13 @@
     document.getElementById('formFilter').innerHTML = '<option value="all">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
 
     filteredData = [...masterData];
-    window.render();
+    render();
   };
 
   window.applyLocalFilter = () => {
     const val = document.getElementById('formFilter').value;
     filteredData = val === 'all' ? [...masterData] : masterData.filter(i => i._f === val);
-    document.getElementById('selectAllBox').checked = false;
-    window.render();
+    render();
   };
 
   window.render = () => {
@@ -157,20 +183,20 @@
     const sQ = document.getElementById('saltInput').value;
     document.getElementById('resCount').innerText = filteredData.length;
 
-    if (!filteredData.length) { area.innerHTML = '<div class="status-msg">No results.</div>'; return; }
+    if (!filteredData.length) { area.innerHTML = '<div class="empty-state">No results found for your search.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
-      <div class="card ${item._t}">
-        <input type="checkbox" class="check-box item-checkbox" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
-        <div style="flex:1">
+      <div class="card ${item._t.replace(' ', '_')}">
+        <input type="checkbox" class="check-box" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
+        <div class="card-body">
           <div class="p-name">${highlight(item._n, nQ)}</div>
-          <div style="font-size:13px; color:#475569; margin:4px 0"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
-          <div class="p-meta">
+          <div class="p-salt"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
+          <div class="p-footer">
             <span><strong>Source:</strong> ${item._t}</span>
             <span><strong>Form:</strong> ${item._f}</span>
-            <span class="price-tag">₹${item._p}</span>
           </div>
         </div>
+        <div class="price-tag">₹${item._p}</div>
       </div>
     `).join('');
   };
@@ -188,12 +214,12 @@
       if (isChecked) markedItems.set(item._id, item);
       else markedItems.delete(item._id);
     });
-    window.render();
+    render();
     document.getElementById('mCount').innerText = markedItems.size;
   };
 
   window.exportData = (arr, title) => {
-    if (!arr.length) return alert("Empty");
+    if (!arr.length) return alert("Nothing to export");
     const clean = arr.map(({_t, _id, _n, _s, _f, _p, ...rest}) => rest);
     const csv = [Object.keys(clean[0]).join(","), ...clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
     const link = document.createElement('a');
