@@ -6,63 +6,57 @@
   <style>
     :root {
       --primary: #1e3a8a;
-      --primary-hover: #1e40af;
       --success: #059669;
       --info: #2563eb;
-      --bg: #f8fafc;
+      --bg: #f1f5f9;
       --border: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
     }
 
-    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text-main); }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #0f172a; }
     .container { max-width: 1100px; margin: 0 auto; }
     
-    /* Top Control Bar */
-    .controls-wrapper { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 24px; border: 1px solid var(--border); }
+    /* Search Panel */
+    .controls-wrapper { background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
     
-    .top-row { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-    .table-picker { padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border); font-weight: 600; background: #fff; cursor: pointer; outline: none; transition: border 0.2s; }
-    .table-picker:focus { border-color: var(--info); }
+    .top-row { display: flex; justify-content: flex-end; margin-bottom: 15px; }
+    .table-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-weight: 700; background: #fff; cursor: pointer; }
 
-    .search-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .search-grid { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 15px; margin-bottom: 20px; }
     
-    label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
-    input, select { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; transition: all 0.2s; background: #fcfcfc; box-sizing: border-box; }
-    input:focus, select:focus { background: #fff; border-color: var(--info); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); outline: none; }
+    label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
+    input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; box-sizing: border-box; transition: 0.2s; }
+    input:focus { border-color: var(--info); outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
 
-    .action-bar { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--border); }
+    .action-bar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 20px; }
     
-    /* Stats & Select All Combined */
-    .status-group { display: flex; align-items: center; gap: 20px; }
-    .stat-badge { font-size: 13px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); }
-    .select-all-wrapper { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--primary); }
+    .stats-group { display: flex; gap: 15px; font-size: 13px; font-weight: 600; color: #475569; }
     
-    .button-group { display: flex; gap: 12px; }
-    button { padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; }
-    button:active { transform: translateY(1px); }
+    .button-group { display: flex; gap: 10px; }
+    button { padding: 12px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-search { background: var(--primary); color: white; }
-    .btn-search:hover { background: var(--primary-hover); }
     .btn-view { background: var(--success); color: white; }
-    .btn-view:hover { opacity: 0.9; }
     .btn-marked { background: var(--info); color: white; }
 
-    /* Result Cards */
-    .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 20px; border: 1px solid var(--border); transition: border 0.2s, transform 0.2s; }
-    .card:hover { border-color: #cbd5e1; transform: translateY(-1px); }
-    .card.dr-codes { border-left: 6px solid #f59e0b; }
+    /* CRITICAL: Select All Bar */
+    .select-all-container { 
+      background: #fff; padding: 15px 20px; margin-bottom: 12px; 
+      border-radius: 10px; border: 2px solid #3b82f6; 
+      display: flex; align-items: center; gap: 12px; 
+      font-weight: 800; color: #1e40af; cursor: pointer;
+    }
+    .select-all-container input { width: 24px; height: 24px; cursor: pointer; margin: 0; }
+
+    /* Cards */
+    .card { background: white; padding: 16px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; border-left: 6px solid #e2e8f0; border: 1px solid var(--border); }
+    .card.Dr_codes { border-left: 6px solid #f59e0b; }
     .card.drugs_data { border-left: 6px solid #3b82f6; }
-    .card.plazza_data { border-left: 6px solid #8b5cf6; }
     
-    .highlight { background: #fef08a; padding: 0 2px; border-radius: 2px; }
+    .highlight { background: #fef08a; font-weight: bold; padding: 0 2px; }
     .card-body { flex: 1; }
-    .p-name { font-weight: 700; font-size: 17px; color: var(--primary); margin-bottom: 4px; }
-    .p-salt { font-size: 13px; color: #475569; margin-bottom: 8px; }
-    .p-footer { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); }
-    .price-tag { color: var(--success); font-weight: 800; font-size: 16px; margin-left: auto; }
-    
+    .p-name { font-weight: 700; font-size: 16px; color: var(--primary); }
+    .p-salt { font-size: 13px; color: #475569; margin: 4px 0; }
+    .price-tag { color: var(--success); font-weight: 800; font-size: 18px; margin-left: auto; }
     .check-box { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
-    .empty-state { text-align: center; padding: 60px; color: var(--text-muted); font-weight: 500; }
   </style>
 </head>
 <body>
@@ -70,8 +64,8 @@
 <div class="container">
   <div class="controls-wrapper">
     <div class="top-row">
-      <select id="tableSelect" class="table-picker" tabindex="4">
-        <option value="all">All Tables</option>
+      <select id="tableSelect" class="table-picker">
+        <option value="all">Search All Tables</option>
         <option value="Dr codes">Dr codes</option>
         <option value="drugs_data">Drugs Data</option>
         <option value="plazza_data">Plazza Data</option>
@@ -80,36 +74,37 @@
 
     <div class="search-grid">
       <div>
-        <label>Product Name</label>
-        <input type="text" id="nameInput" placeholder="Press Enter to search..." tabindex="1" onkeydown="handleKey(event)">
+        <label>Product Name (Enter)</label>
+        <input type="text" id="nameInput" placeholder="Search..." onkeydown="handleKey(event)">
       </div>
       <div>
         <label>Molecule / Salt</label>
-        <input type="text" id="saltInput" placeholder="Highlight matches..." tabindex="2" onkeydown="handleKey(event)">
+        <input type="text" id="saltInput" placeholder="Salt..." onkeydown="handleKey(event)">
       </div>
       <div>
         <label>Form Filter</label>
-        <select id="formFilter" tabindex="3" onchange="applyLocalFilter()">
+        <select id="formFilter" onchange="applyLocalFilter()">
           <option value="all">All Forms</option>
         </select>
       </div>
     </div>
 
     <div class="action-bar">
-      <div class="status-group">
-        <div class="stat-badge">Matches: <span id="resCount">0</span></div>
-        <div class="stat-badge">Marked: <span id="mCount">0</span></div>
-        <label class="select-all-wrapper">
-          <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Select All
-        </label>
+      <div class="stats-group">
+        <span>Matches: <span id="resCount">0</span></span>
+        <span>Marked: <span id="mCount">0</span></span>
       </div>
-      
       <div class="button-group">
         <button class="btn-search" onclick="executeSearch()">Search</button>
         <button class="btn-view" onclick="exportData(filteredData, 'view_export')">Download View</button>
         <button class="btn-marked" onclick="exportMarked()">Download Marked</button>
       </div>
     </div>
+  </div>
+
+  <div class="select-all-container" onclick="document.getElementById('selectAllBox').click()">
+    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll(event)"> 
+    <span>SELECT ALL VISIBLE ITEMS</span>
   </div>
 
   <div id="displayArea"></div>
@@ -139,7 +134,7 @@
     const salt = document.getElementById('saltInput').value.trim();
     const table = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="empty-state">Searching database...</div>';
+    document.getElementById('displayArea').innerHTML = '<center>Searching...</center>';
     document.getElementById('selectAllBox').checked = false;
     
     async function fetchTable(t) {
@@ -174,6 +169,7 @@
   window.applyLocalFilter = () => {
     const val = document.getElementById('formFilter').value;
     filteredData = val === 'all' ? [...masterData] : masterData.filter(i => i._f === val);
+    document.getElementById('selectAllBox').checked = false;
     render();
   };
 
@@ -183,7 +179,7 @@
     const sQ = document.getElementById('saltInput').value;
     document.getElementById('resCount').innerText = filteredData.length;
 
-    if (!filteredData.length) { area.innerHTML = '<div class="empty-state">No results found for your search.</div>'; return; }
+    if (!filteredData.length) { area.innerHTML = '<center>No results.</center>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
       <div class="card ${item._t.replace(' ', '_')}">
@@ -191,10 +187,7 @@
         <div class="card-body">
           <div class="p-name">${highlight(item._n, nQ)}</div>
           <div class="p-salt"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
-          <div class="p-footer">
-            <span><strong>Source:</strong> ${item._t}</span>
-            <span><strong>Form:</strong> ${item._f}</span>
-          </div>
+          <div style="font-size:12px; color:#64748b">Source: ${item._t} | Form: ${item._f}</div>
         </div>
         <div class="price-tag">₹${item._p}</div>
       </div>
@@ -208,8 +201,9 @@
     document.getElementById('mCount').innerText = markedItems.size;
   };
 
-  window.toggleSelectAll = () => {
-    const isChecked = document.getElementById('selectAllBox').checked;
+  window.toggleSelectAll = (e) => {
+    e.stopPropagation();
+    const isChecked = e.target.checked;
     filteredData.forEach(item => {
       if (isChecked) markedItems.set(item._id, item);
       else markedItems.delete(item._id);
@@ -219,7 +213,7 @@
   };
 
   window.exportData = (arr, title) => {
-    if (!arr.length) return alert("Nothing to export");
+    if (!arr.length) return alert("Empty");
     const clean = arr.map(({_t, _id, _n, _s, _f, _p, ...rest}) => rest);
     const csv = [Object.keys(clean[0]).join(","), ...clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
     const link = document.createElement('a');
