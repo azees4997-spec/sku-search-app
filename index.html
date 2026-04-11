@@ -1,87 +1,98 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sahimed | Master SKU Search</title>
+  <title>Sahimed | Pro SKU Search</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-    .container { max-width: 1100px; margin: 0 auto; }
-    .header { background: #1a237e; color: white; padding: 15px; border-radius: 12px 12px 0 0; text-align: center; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 1200px; margin: 0 auto; }
     
-    .filter-panel { 
-      background: white; padding: 20px; border-radius: 0 0 12px 12px; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;
+    /* Header & Table Select Top Right */
+    .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .project-title { font-size: 24px; font-weight: 800; color: #1e3a8a; margin: 0; }
+    .table-picker { background: #fff; padding: 8px 15px; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; cursor: pointer; }
+
+    /* Search Bar Layout */
+    .search-panel { 
+      background: white; padding: 25px; border-radius: 12px; 
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 20px;
     }
-    .grid-inputs { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+    .search-grid { display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 15px; align-items: end; }
     
-    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
-    label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+    label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border 0.2s; }
+    input:focus { outline: none; border-color: #3b82f6; ring: 2px #3b82f6; }
 
-    .btn-row { display: flex; gap: 10px; justify-content: center; padding-top: 15px; border-top: 1px solid #eee; }
-    button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
-    .btn-search { background: #1a237e; color: white; }
-    .btn-download { background: #2e7d32; color: white; }
-    .btn-marked { background: #0288d1; color: white; }
+    .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid #f1f5f9; pt: 20px; }
+    .stats { font-size: 13px; color: #64748b; font-weight: 500; }
+    
+    button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #1e3a8a; color: white; }
+    .btn-primary:hover { background: #1e40af; }
+    .btn-green { background: #10b981; color: white; }
+    .btn-blue { background: #3b82f6; color: white; }
 
-    .select-all-bar { background: #fff; padding: 10px 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 14px; color: #444; }
-
+    /* Results */
+    .select-all-bar { display: flex; align-items: center; gap: 10px; padding: 10px; font-size: 13px; font-weight: 600; }
     .card { 
-      background: white; padding: 12px; border-radius: 10px; margin-bottom: 8px;
-      display: flex; align-items: center; gap: 15px; border-left: 5px solid #ccc;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 15px; border-left: 5px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .dr-codes { border-left-color: #ff9800; }
-    .drugs_data { border-left-color: #1976d2; }
-    .plazza_data { border-left-color: #9c27b0; }
-
+    .dr-codes { border-left-color: #f59e0b; }
+    .drugs_data { border-left-color: #3b82f6; }
     .card-info { flex: 1; }
-    .p-name { font-weight: bold; font-size: 15px; color: #1a237e; }
-    .p-meta { display: flex; gap: 15px; font-size: 12px; color: #777; margin-top: 4px; }
-    .price-tag { color: #2e7d32; font-weight: bold; }
+    .p-name { font-weight: 700; font-size: 16px; color: #1e3a8a; }
+    .p-salt { font-size: 13px; color: #475569; margin: 4px 0; background: #f1f5f9; display: inline-block; padding: 2px 8px; border-radius: 4px; }
+    .p-meta { display: flex; gap: 20px; font-size: 12px; color: #94a3b8; margin-top: 5px; }
+    .price-tag { color: #059669; font-weight: 800; }
     .check-box { width: 20px; height: 20px; cursor: pointer; }
-    .loading { text-align: center; color: #1a237e; margin: 20px; font-weight: bold; }
+    .loading { text-align: center; padding: 40px; font-weight: 600; color: #64748b; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header"><h2>Sahimed Data Explorer</h2></div>
+  <div class="header-section">
+    <h1 class="project-title">Sahimed.com</h1>
+    <select id="tableSelect" class="table-picker">
+      <option value="Dr codes">Dr codes</option>
+      <option value="drugs_data">Drugs Data</option>
+      <option value="plazza_data">Plazza Data</option>
+      <option value="all">Search All</option>
+    </select>
+  </div>
 
-  <div class="filter-panel">
-    <div class="grid-inputs">
+  <div class="search-panel">
+    <div class="search-grid">
       <div>
-        <label>SEARCH PRODUCT (SUGGESTIONS)</label>
-        <input type="text" id="nameInput" list="suggestions" placeholder="Type to see matches...">
-        <datalist id="suggestions"></datalist>
+        <label>Product Name (Press Enter)</label>
+        <input type="text" id="nameInput" placeholder="Type name and hit Enter..." onkeypress="handleKeyPress(event)">
       </div>
       <div>
-        <label>TABLE SELECTION</label>
-        <select id="tableSelect">
-          <option value="Dr codes">Dr codes (New)</option>
-          <option value="drugs_data">Drugs Data</option>
-          <option value="plazza_data">Plazza Data</option>
-          <option value="all">Search All Tables</option>
+        <label>Composition / Salt</label>
+        <input type="text" id="saltInput" placeholder="Search by salt..." onkeypress="handleKeyPress(event)">
+      </div>
+      <div>
+        <label>Form (Dynamic Filter)</label>
+        <select id="formFilter" onchange="filterResultsByForm()">
+          <option value="all">All Forms</option>
         </select>
-      </div>
-      <div>
-        <label>SALT COMPOSITION</label>
-        <input type="text" id="saltInput" placeholder="e.g. Paracetamol">
-      </div>
-      <div>
-        <label>FORM</label>
-        <input type="text" id="formInput" placeholder="e.g. Tablet">
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-search" onclick="executeSearch()">Apply Filters</button>
-      <button class="btn-download" onclick="exportData(currentData, 'search_results')">Download View</button>
-      <button class="btn-marked" onclick="exportMarked()">Download Marked (<span id="mCount">0</span>)</button>
+    <div class="action-row">
+      <div class="stats">Showing <span id="resCount">0</span> items | Marked: <span id="mCount">0</span></div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-primary" onclick="executeSearch()">Search</button>
+        <button class="btn-green" onclick="exportData(filteredData, 'view_export')">Download View</button>
+        <button class="btn-blue" onclick="exportMarked()">Download Marked</button>
+      </div>
     </div>
   </div>
 
   <div class="select-all-bar">
-    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Select All in Current View
+    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> Mark All Visible
   </div>
 
   <div id="displayArea"></div>
@@ -94,81 +105,80 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
   );
 
-  let currentData = [];
+  let rawResults = [];   // Master data from DB
+  let filteredData = []; // Data after dropdown form filter
   let selectedMap = new Map();
-  let debounceTimer;
 
-  // Suggestions Logic
-  document.getElementById('nameInput').addEventListener('input', (e) => {
-    const val = e.target.value;
-    clearTimeout(debounceTimer);
-    if(val.length < 2) return;
-    debounceTimer = setTimeout(() => fetchSuggestions(val), 300);
-  });
-
-  async function fetchSuggestions(val) {
-    const table = document.getElementById('tableSelect').value;
-    const activeTable = table === 'all' ? 'Dr codes' : table;
-    const nameCol = activeTable === 'Dr codes' ? 'Product Name' : 'sku_name';
-    
-    const { data } = await client.from(activeTable).select(nameCol).ilike(nameCol, `%${val}%`).limit(10);
-    if(data) {
-      const list = document.getElementById('suggestions');
-      list.innerHTML = data.map(item => `<option value="${item[nameCol]}">`).join('');
-    }
+  function handleKeyPress(e) {
+    if (e.key === 'Enter') executeSearch();
   }
 
   async function executeSearch() {
     const nameVal = document.getElementById('nameInput').value.trim();
-    const tableVal = document.getElementById('tableSelect').value;
     const saltVal = document.getElementById('saltInput').value.trim();
-    const formVal = document.getElementById('formInput').value.trim();
+    const tableVal = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="loading">Searching...</div>';
-    document.getElementById('selectAllBox').checked = false;
-
-    async function getTableData(tName) {
+    document.getElementById('displayArea').innerHTML = '<div class="loading">Searching Database...</div>';
+    
+    async function fetchTable(tName) {
       let query = client.from(tName).select('*');
-      const nameCol = tName === 'Dr codes' ? 'Product Name' : 'sku_name';
-      const formCol = tName === 'Dr codes' ? 'Product Form' : 'pack_size';
-
-      if (nameVal) query = query.ilike(nameCol, `%${nameVal}%`);
+      const nCol = tName === 'Dr codes' ? 'Product Name' : 'sku_name';
+      if (nameVal) query = query.ilike(nCol, `%${nameVal}%`);
       if (saltVal) query = query.ilike('salt_composition', `%${saltVal}%`);
-      if (formVal) query = query.ilike(formCol, `%${formVal}%`);
       
-      const { data } = await query.limit(100);
-      return (data || []).map(row => ({
-        ...row,
-        _tName: tName,
-        _dispId: row['Product ID'] || row.sku_id || row.id,
-        _dispName: row['Product Name'] || row.sku_name,
-        _dispForm: row['Product Form'] || row.pack_size || 'N/A',
-        _dispPrice: row.mrp || 0
+      const { data } = await query.limit(200);
+      return (data || []).map(r => ({
+        ...r,
+        _t: tName,
+        _id: r['Product ID'] || r.sku_id || r.id,
+        _n: r['Product Name'] || r.sku_name,
+        _f: r['Product Form'] || r.pack_size || 'N/A',
+        _p: r.mrp || 0
       }));
     }
 
     if (tableVal === 'all') {
-      const results = await Promise.all([getTableData('Dr codes'), getTableData('drugs_data'), getTableData('plazza_data')]);
-      currentData = results.flat();
+      const all = await Promise.all([fetchTable('Dr codes'), fetchTable('drugs_data'), fetchTable('plazza_data')]);
+      rawResults = all.flat();
     } else {
-      currentData = await getTableData(tableVal);
+      rawResults = await fetchTable(tableVal);
     }
+
+    populateFormDropdown();
+    filteredData = [...rawResults];
+    renderCards();
+  }
+
+  function populateFormDropdown() {
+    const dropdown = document.getElementById('formFilter');
+    const forms = [...new Set(rawResults.map(i => i._f))].sort();
+    dropdown.innerHTML = '<option value="all">All Forms</option>' + 
+      forms.map(f => `<option value="${f}">${f}</option>`).join('');
+  }
+
+  function filterResultsByForm() {
+    const val = document.getElementById('formFilter').value;
+    filteredData = val === 'all' ? [...rawResults] : rawResults.filter(i => i._f === val);
     renderCards();
   }
 
   function renderCards() {
     const area = document.getElementById('displayArea');
-    if (currentData.length === 0) { area.innerHTML = '<center>No results found.</center>'; return; }
+    document.getElementById('resCount').innerText = filteredData.length;
+    
+    if (filteredData.length === 0) { area.innerHTML = '<div class="loading">No matches found.</div>'; return; }
 
-    area.innerHTML = currentData.map((item, idx) => `
-      <div class="card ${item._tName}">
-        <input type="checkbox" class="check-box item-check" ${selectedMap.has(item._dispId) ? 'checked' : ''} onchange="toggleItem(${idx})">
+    area.innerHTML = filteredData.map((item, idx) => `
+      <div class="card ${item._t}">
+        <input type="checkbox" class="check-box" ${selectedMap.has(item._id) ? 'checked' : ''} onchange="toggleItem(${idx})">
         <div class="card-info">
-          <div class="p-name">${item._dispName}</div>
+          <div class="p-name">${item._n}</div>
+          <div class="p-salt">${item.salt_composition || 'N/A'}</div>
           <div class="p-meta">
-            <span><strong>Table:</strong> ${item._tName}</span>
-            <span><strong>Form:</strong> ${item._dispForm}</span>
-            <span class="price-tag">₹${item._dispPrice}</span>
+            <span><strong>Table:</strong> ${item._t}</span>
+            <span><strong>Form:</strong> ${item._f}</span>
+            <span><strong>ID:</strong> ${item._id}</span>
+            <span class="price-tag">₹${item._p}</span>
           </div>
         </div>
       </div>
@@ -176,41 +186,22 @@
   }
 
   window.toggleItem = function(idx) {
-    const item = currentData[idx];
-    if (selectedMap.has(item._dispId)) selectedMap.delete(item._dispId);
-    else selectedMap.set(item._dispId, item);
-    updateMarkedCount();
+    const item = filteredData[idx];
+    if (selectedMap.has(item._id)) selectedMap.delete(item._id);
+    else selectedMap.set(item._id, item);
+    document.getElementById('mCount').innerText = selectedMap.size;
   };
 
   window.toggleSelectAll = function() {
-    const isChecked = document.getElementById('selectAllBox').checked;
-    currentData.forEach(item => {
-      if (isChecked) selectedMap.set(item._dispId, item);
-      else selectedMap.delete(item._dispId);
+    const checked = document.getElementById('selectAllBox').checked;
+    filteredData.forEach(item => {
+      if (checked) selectedMap.set(item._id, item);
+      else selectedMap.delete(item._id);
     });
     renderCards();
-    updateMarkedCount();
-  };
-
-  function updateMarkedCount() {
     document.getElementById('mCount').innerText = selectedMap.size;
-  }
-
-  window.exportData = function(dataArray, filename) {
-    if (dataArray.length === 0) return alert("No data!");
-    const clean = dataArray.map(({_tName, _dispId, _dispName, _dispForm, _dispPrice, ...rest}) => rest);
-    const headers = Object.keys(clean[0]).join(",");
-    const rows = clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([headers + "\n" + rows], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${filename}.csv`;
-    a.click();
   };
 
-  window.exportMarked = function() {
-    exportData(Array.from(selectedMap.values()), 'marked_items');
-  };
-</script>
-</body>
-</html>
+  window.exportData = function(arr, name) {
+    if (!arr.length) return alert("No data to export");
+    const clean = arr
