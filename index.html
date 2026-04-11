@@ -16,27 +16,24 @@
     
     label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; margin-bottom: 6px; display: block; }
     input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; transition: all 0.2s; }
-    input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); outline: none; }
 
     .action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
     .stats { font-size: 13px; font-weight: 600; color: #475569; }
     
-    button { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
-    button:active { transform: scale(0.98); }
+    button { padding: 12px 24px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
     .btn-primary { background: #1e3a8a; color: white; }
     .btn-green { background: #059669; color: white; }
     .btn-blue { background: #2563eb; color: white; }
 
-    /* Cards & Highlighting */
+    .select-all-bar { background: #fff; padding: 12px 16px; margin-bottom: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px; border: 1px solid #e2e8f0; }
+
     .card { background: white; padding: 16px; border-radius: 10px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border-left: 6px solid #e2e8f0; }
     .dr-codes { border-left-color: #f59e0b; }
     .drugs_data { border-left-color: #3b82f6; }
     .plazza_data { border-left-color: #8b5cf6; }
     
-    .highlight { background: #fef08a; font-weight: bold; border-radius: 2px; }
-    .p-name { font-weight: 700; font-size: 17px; color: #1e3a8a; margin-bottom: 4px; }
-    .p-salt { font-size: 13px; color: #334155; padding: 4px 8px; background: #f8fafc; border-radius: 6px; display: inline-block; margin: 4px 0; }
-    .p-meta { display: flex; gap: 20px; font-size: 12px; color: #64748b; margin-top: 8px; }
+    .highlight { background: #fef08a; font-weight: bold; }
+    .p-name { font-weight: 700; font-size: 17px; color: #1e3a8a; }
     .price-tag { color: #059669; font-weight: 800; font-size: 16px; }
     .check-box { width: 22px; height: 22px; cursor: pointer; accent-color: #1e3a8a; }
     .status-msg { text-align: center; padding: 40px; font-weight: 700; color: #64748b; }
@@ -58,15 +55,15 @@
   <div class="search-panel">
     <div class="search-grid">
       <div>
-        <label>Product Name (Press Enter)</label>
-        <input type="text" id="nameInput" placeholder="e.g. 1 AL AX" onkeydown="handleKeyPress(event)">
+        <label>Product Name</label>
+        <input type="text" id="nameInput" placeholder="Enter name..." onkeydown="handleKeyPress(event)">
       </div>
       <div>
-        <label>Molecule / Salt (Highlights)</label>
-        <input type="text" id="saltInput" placeholder="e.g. Levocetirizine" onkeydown="handleKeyPress(event)">
+        <label>Molecule / Salt</label>
+        <input type="text" id="saltInput" placeholder="Enter salt..." onkeydown="handleKeyPress(event)">
       </div>
       <div>
-        <label>Form Filter (Dynamic)</label>
+        <label>Form Filter</label>
         <select id="formFilter" onchange="applyLocalFilter()">
           <option value="all">All Forms</option>
         </select>
@@ -77,17 +74,21 @@
       <div class="stats">Matches: <span id="resCount">0</span> | Marked: <span id="mCount">0</span></div>
       <div style="display:flex; gap:10px;">
         <button class="btn-primary" onclick="executeSearch()">Search</button>
-        <button class="btn-green" onclick="exportData(filteredData, 'sahimed_export')">Download View</button>
+        <button class="btn-green" onclick="exportData(filteredData, 'view_export')">Download View</button>
         <button class="btn-blue" onclick="exportMarked()">Download Marked</button>
       </div>
     </div>
+  </div>
+
+  <div class="select-all-bar">
+    <input type="checkbox" id="selectAllBox" onchange="toggleSelectAll()"> 
+    <span>Select All Visible Results</span>
   </div>
 
   <div id="displayArea"></div>
 </div>
 
 <script>
-  // Setup Supabase
   const { createClient } = supabase;
   const client = createClient(
     "https://rhxrtsjocqizhxqhbzgu.supabase.co",
@@ -98,38 +99,30 @@
   let filteredData = [];
   let markedItems = new Map();
 
-  // Attach functions to window to prevent "Not Defined" errors
-  window.handleKeyPress = function(e) {
-    if (e.key === 'Enter') window.executeSearch();
-  };
+  window.handleKeyPress = (e) => { if (e.key === 'Enter') window.executeSearch(); };
 
-  function highlightText(text, query) {
-    if (!query || !text) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
+  function highlight(text, q) {
+    if (!q || !text) return text;
+    const regex = new RegExp(`(${q})`, 'gi');
     return text.toString().replace(regex, '<span class="highlight">$1</span>');
   }
 
   window.executeSearch = async function() {
-    const nameVal = document.getElementById('nameInput').value.trim();
-    const saltVal = document.getElementById('saltInput').value.trim();
-    const tableVal = document.getElementById('tableSelect').value;
+    const name = document.getElementById('nameInput').value.trim();
+    const salt = document.getElementById('saltInput').value.trim();
+    const table = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="status-msg">Fetching records...</div>';
+    document.getElementById('displayArea').innerHTML = '<div class="status-msg">Searching...</div>';
+    document.getElementById('selectAllBox').checked = false;
     
-    async function getFromTable(tableName) {
-      let query = client.from(tableName).select('*');
-      const nameCol = tableName === 'Dr codes' ? 'Product Name' : 'sku_name';
-      
-      if (nameVal) query = query.ilike(nameCol, `%${nameVal}%`);
-      if (saltVal) query = query.ilike('salt_composition', `%${saltVal}%`);
-      
-      const { data, error } = await query.limit(300);
-      if (error) return [];
-      
-      return data.map(r => ({
-        ...r,
-        _t: tableName,
-        _id: r['Product ID'] || r.sku_id || r.id,
+    async function fetchTable(t) {
+      let query = client.from(t).select('*');
+      const nCol = t === 'Dr codes' ? 'Product Name' : 'sku_name';
+      if (name) query = query.ilike(nCol, `%${name}%`);
+      if (salt) query = query.ilike('salt_composition', `%${salt}%`);
+      const { data } = await query.limit(400);
+      return (data || []).map(r => ({
+        ...r, _t: t, _id: r['Product ID'] || r.sku_id || r.id,
         _n: r['Product Name'] || r.sku_name || '',
         _s: r.salt_composition || 'N/A',
         _f: r['Product Form'] || r.pack_size || 'N/A',
@@ -137,46 +130,41 @@
       }));
     }
 
-    if (tableVal === 'all') {
-      const all = await Promise.all([getFromTable('Dr codes'), getFromTable('drugs_data'), getFromTable('plazza_data')]);
+    if (table === 'all') {
+      const all = await Promise.all([fetchTable('Dr codes'), fetchTable('drugs_data'), fetchTable('plazza_data')]);
       masterData = all.flat();
     } else {
-      masterData = await getFromTable(tableVal);
+      masterData = await fetchTable(table);
     }
 
-    // Update Dropdown
-    const dropdown = document.getElementById('formFilter');
     const forms = [...new Set(masterData.map(i => i._f))].filter(Boolean).sort();
-    dropdown.innerHTML = '<option value="all">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
+    document.getElementById('formFilter').innerHTML = '<option value="all">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
 
     filteredData = [...masterData];
     window.render();
   };
 
-  window.applyLocalFilter = function() {
+  window.applyLocalFilter = () => {
     const val = document.getElementById('formFilter').value;
     filteredData = val === 'all' ? [...masterData] : masterData.filter(i => i._f === val);
+    document.getElementById('selectAllBox').checked = false;
     window.render();
   };
 
-  window.render = function() {
+  window.render = () => {
     const area = document.getElementById('displayArea');
-    const qName = document.getElementById('nameInput').value;
-    const qSalt = document.getElementById('saltInput').value;
-
+    const nQ = document.getElementById('nameInput').value;
+    const sQ = document.getElementById('saltInput').value;
     document.getElementById('resCount').innerText = filteredData.length;
 
-    if (filteredData.length === 0) {
-      area.innerHTML = '<div class="status-msg">No results found for these criteria.</div>';
-      return;
-    }
+    if (!filteredData.length) { area.innerHTML = '<div class="status-msg">No results.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
       <div class="card ${item._t}">
-        <input type="checkbox" class="check-box" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
-        <div class="card-info">
-          <div class="p-name">${highlightText(item._n, qName)}</div>
-          <div class="p-salt"><strong>Salt:</strong> ${highlightText(item._s, qSalt)}</div>
+        <input type="checkbox" class="check-box item-checkbox" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
+        <div style="flex:1">
+          <div class="p-name">${highlight(item._n, nQ)}</div>
+          <div style="font-size:13px; color:#475569; margin:4px 0"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
           <div class="p-meta">
             <span><strong>Source:</strong> ${item._t}</span>
             <span><strong>Form:</strong> ${item._f}</span>
@@ -187,28 +175,34 @@
     `).join('');
   };
 
-  window.toggleMark = function(idx) {
+  window.toggleMark = (idx) => {
     const item = filteredData[idx];
     if (markedItems.has(item._id)) markedItems.delete(item._id);
     else markedItems.set(item._id, item);
     document.getElementById('mCount').innerText = markedItems.size;
   };
 
-  window.exportData = function(arr, filename) {
-    if (!arr.length) return alert("No data to export");
+  window.toggleSelectAll = () => {
+    const isChecked = document.getElementById('selectAllBox').checked;
+    filteredData.forEach(item => {
+      if (isChecked) markedItems.set(item._id, item);
+      else markedItems.delete(item._id);
+    });
+    window.render();
+    document.getElementById('mCount').innerText = markedItems.size;
+  };
+
+  window.exportData = (arr, title) => {
+    if (!arr.length) return alert("Empty");
     const clean = arr.map(({_t, _id, _n, _s, _f, _p, ...rest}) => rest);
-    const headers = Object.keys(clean[0]).join(",");
-    const rows = clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([headers + "\n" + rows], { type: 'text/csv' });
+    const csv = [Object.keys(clean[0]).join(","), ...clean.map(o => Object.values(o).map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${filename}.csv`;
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    link.download = `${title}.csv`;
     link.click();
   };
 
-  window.exportMarked = function() {
-    exportData(Array.from(markedItems.values()), 'marked_items');
-  };
+  window.exportMarked = () => exportData(Array.from(markedItems.values()), 'marked_items');
 </script>
 </body>
 </html>
