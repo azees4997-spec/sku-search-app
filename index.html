@@ -1,79 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sahimed | SKU & Salt Explorer</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6fa; padding: 20px; color: #333; }
-    .container { max-width: 1000px; margin: 0 auto; }
-    h1 { color: #1a237e; margin-bottom: 20px; }
-    
-    .top-bar { 
-      display: flex; flex-direction: column; gap: 15px; background: white; 
-      padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; 
-    }
-    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    input, select { padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-    input:focus { border-color: #1976d2; }
-    #searchBox { flex: 2; min-width: 250px; }
-    #saltFilter, #formFilter { flex: 1; min-width: 150px; }
-
-    .btn-group { display: flex; gap: 10px; }
-    button { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .btn-download { background: #2e7d32; color: white; }
-    .btn-marked { background: #0288d1; color: white; }
-    
-    .card { 
-      padding: 16px; border-radius: 10px; margin-bottom: 12px; background: white; 
-      display: flex; align-items: flex-start; gap: 15px; border-left: 6px solid #ccc; 
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .dr-codes { border-left-color: #ff9800; }
-    .drugs { border-left-color: #1976d2; }
-    .card-content { flex: 1; }
-    .source { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-    .dr-codes .source { color: #ff9800; }
-    .name { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
-    .details { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 13px; color: #666; }
-    .price { font-weight: bold; color: #2e7d32; font-size: 15px; }
-    .checkbox-custom { width: 20px; height: 20px; margin-top: 5px; cursor: pointer; }
-    .loading { text-align: center; padding: 20px; color: #666; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h1>Sahimed SKU Explorer</h1>
-
-  <div class="top-bar">
-    <div class="input-row">
-      <input type="text" id="searchBox" placeholder="Search Product Name..." />
-      <select id="tableFilter">
-        <option value="Dr codes">Dr codes</option>
-        <option value="drugs_data">Drugs Data</option>
-        <option value="all">All Data</option>
-      </select>
-    </div>
-    
-    <div class="input-row">
-      <input type="text" id="saltFilter" placeholder="Salt (e.g. Paracetamol)" />
-      <input type="text" id="formFilter" placeholder="Form (e.g. Tablet)" />
-    </div>
-
-    <div class="btn-group">
-      <button class="btn-download" onclick="downloadCSV(currentResults, 'search_results')">Download Current View</button>
-      <button class="btn-marked" onclick="downloadMarked()">Download Marked (<span id="markedCount">0</span>)</button>
-    </div>
-  </div>
-
-  <div id="results"></div>
-</div>
-
 <script>
   const { createClient } = supabase;
 
-  // Supabase Configuration
   const supabaseClient = createClient(
     "https://rhxrtsjocqizhxqhbzgu.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoeHJ0c2pvY3Fpemh4cWhiemd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMjY1MzQsImV4cCI6MjA4NjkwMjUzNH0.fa6pG3IxS05ngcpbrWCWPA5NAYF1YQ2kRn9WO__81qM"
@@ -102,29 +29,29 @@
     const form = formInput.value.trim();
     const filter = filterSelect.value;
 
-    // Minimum search length check
     if (!keyword && !salt && !form) {
       document.getElementById("results").innerHTML = "";
       return;
     }
 
-    document.getElementById("results").innerHTML = "<div class='loading'>Searching...</div>";
+    document.getElementById("results").innerHTML = "<div class='loading'>Searching Sahimed Database...</div>";
 
     async function fetchData(tableName) {
-      // NOTE: Table names with spaces must be quoted in SQL, handled here by template literal
+      // Logic for tables with spaces
       let query = supabaseClient.from(tableName).select("*");
 
       if (keyword) {
+        // Fix: Use 'Product Name' for Dr codes, 'sku_name' for others
         const nameCol = (tableName === "Dr codes") ? "Product Name" : "sku_name";
         query = query.ilike(nameCol, `%${keyword}%`);
       }
       
       if (salt) {
-        // Checking common column names for salt
         query = query.ilike("salt_composition", `%${salt}%`);
       }
 
       if (form) {
+        // Fix: Use 'Product Form' for Dr codes, 'pack_size' for others
         const formCol = (tableName === "Dr codes") ? "Product Form" : "pack_size";
         query = query.ilike(formCol, `%${form}%`);
       }
@@ -132,7 +59,7 @@
       const { data, error } = await query.limit(100);
       
       if (error) {
-        console.error(`Error searching ${tableName}:`, error.message);
+        console.error(`Error in ${tableName}:`, error.message);
         return [];
       }
       
@@ -140,13 +67,81 @@
         ...row,
         sourceLabel: tableName,
         cssClass: tableName === "Dr codes" ? "dr-codes" : "drugs",
-        // Unified display fields
+        // Unified Mapping
         dispName: row["Product Name"] || row.sku_name || "Unknown",
-        dispId: row["Product ID"] || row.sku_id || row.id,
-        dispPrice: row.mrpp || row.mrp || 0,
+        dispId: row["Product ID"] || row.sku_id || "N/A",
+        dispPrice: row.mrp || 0, // Changed from mrpp to mrp to match your table
         dispForm: row["Product Form"] || row.pack_size || "N/A"
       }));
     }
 
     let results = [];
-    if (
+    if (filter === "all") {
+      const r1 = await fetchData("Dr codes");
+      const r2 = await fetchData("drugs_data");
+      results = [...r1, ...r2];
+    } else {
+      results = await fetchData(filter);
+    }
+
+    currentResults = results;
+    render(results);
+  }
+
+  function render(results) {
+    const container = document.getElementById("results");
+    if (results.length === 0) {
+      container.innerHTML = "<div style='padding:20px;'>No data found in this table. Check if 'Product Name' matches your search.</div>";
+      return;
+    }
+
+    let html = "";
+    results.forEach((row, index) => {
+      const isChecked = markedItems.has(row.dispId) ? "checked" : "";
+      html += `
+        <div class="card ${row.cssClass}">
+          <input type="checkbox" class="checkbox-custom" ${isChecked} onchange="toggleMark(${index})">
+          <div class="card-content">
+            <div class="source">${row.sourceLabel}</div>
+            <div class="name">${row.dispName}</div>
+            <div class="details">
+              <div><strong>ID:</strong> ${row.dispId}</div>
+              <div><strong>Form:</strong> ${row.dispForm}</div>
+              <div><strong>Salt:</strong> ${row.salt_composition || 'N/A'}</div>
+              <div class="price">₹${row.dispPrice}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  window.toggleMark = function(index) {
+    const item = currentResults[index];
+    if (markedItems.has(item.dispId)) {
+      markedItems.delete(item.dispId);
+    } else {
+      markedItems.set(item.dispId, item);
+    }
+    document.getElementById("markedCount").innerText = markedItems.size;
+  };
+
+  window.downloadCSV = function(data, filename) {
+    if (!data || data.length === 0) return alert("Nothing to download");
+    const cleanData = data.map(({cssClass, sourceLabel, dispName, dispId, dispPrice, dispForm, ...rest}) => rest);
+    const headers = Object.keys(cleanData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...cleanData.map(row => headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.csv`;
+    link.click();
+  };
+
+  window.downloadMarked = function() {
+    downloadCSV(Array.from(markedItems.values()), 'marked_items');
+  };
+</script>
