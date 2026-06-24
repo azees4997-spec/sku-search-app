@@ -40,7 +40,7 @@
     .btn-outline { background: #fff; border: 2px solid #e2e8f0; color: var(--secondary); }
     .btn-outline:hover { border-color: var(--success); color: var(--success); }
 
-    /* SELECT ALL SECTION - Mouse Friendly */
+    /* SELECT ALL SECTION */
     .select-all-zone { 
       background: #eff6ff; padding: 15px 25px; margin-bottom: 15px; 
       border-radius: 15px; border: 2px dashed #3b82f6; 
@@ -51,7 +51,7 @@
     .select-all-zone label { margin: 0; cursor: pointer; font-size: 15px; font-weight: 800; color: #1e40af; flex: 1; }
     .big-check { width: 24px; height: 24px; cursor: pointer; margin: 0; }
 
-    /* Results Card Colors by Component Table Source */
+    /* Results Card Color Identifiers */
     .card { 
       background: white; padding: 20px; border-radius: 16px; margin-bottom: 12px; 
       display: flex; align-items: center; gap: 20px; border: 1px solid #e2e8f0; 
@@ -59,8 +59,7 @@
     }
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     
-    /* Unique side-borders for distinct source visibility */
-    .card.Dr_codes { border-left: 6px solid #f59e0b; }       /* Amber/Orange */
+    .card.Dr_codes { border-left: 6px solid #f59e0b; }       /* Amber */
     .card.DR_Codes_June { border-left: 6px solid #8b5cf6; }  /* Purple */
     .card.drugs_data { border-left: 6px solid #3b82f6; }     /* Blue */
     .card.plazza_data { border-left: 6px solid #ec4899; }    /* Pink */
@@ -144,8 +143,12 @@
 
   function highlight(text, q) {
     if (!q || !text) return text;
-    const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-    return text.toString().replace(regex, '<span class="highlight">$1</span>');
+    try {
+      const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+      return text.toString().replace(regex, '<span class="highlight">$1</span>');
+    } catch (e) {
+      return text;
+    }
   }
 
   window.executeSearch = async function() {
@@ -157,26 +160,31 @@
     document.getElementById('selectAllBox').checked = false;
     
     async function fetchTable(t) {
-      let query = client.from(t).select('*');
-      
-      // Dynamic column naming assignment matching schema conditions
-      const nCol = (t === 'Dr codes' || t === 'DR_Codes_June') ? 'Product Name' : 'sku_name';
-      if (name) query = query.ilike(nCol, `%${name}%`);
-      
-      // Handle the 'Composition' column explicitly layout out inside DR_Codes_June
-      const sCol = (t === 'DR_Codes_June') ? 'Composition' : 'salt_composition';
-      if (salt) query = query.ilike(sCol, `%${salt}%`);
-      
-      const { data } = await query.limit(500);
-      return (data || []).map(r => ({
-        ...r, 
-        _t: t, 
-        _id: r['Product ID'] || r.sku_id || r.id,
-        _n: r['Product Name'] || r.sku_name || '',
-        _s: r.salt_composition || r.Composition || 'N/A',
-        _f: r['Product Form'] || r.pack_size || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
-        _p: r.mrp || r.mrpp || 0
-      }));
+      try {
+        let query = client.from(t).select('*');
+        
+        const nCol = (t === 'Dr codes' || t === 'DR_Codes_June') ? 'Product Name' : 'sku_name';
+        if (name) query = query.ilike(nCol, `%${name}%`);
+        
+        const sCol = (t === 'DR_Codes_June') ? 'Composition' : 'salt_composition';
+        if (salt) query = query.ilike(sCol, `%${salt}%`);
+        
+        const { data, error } = await query.limit(500);
+        if (error) throw error;
+
+        return (data || []).map(r => ({
+          ...r, 
+          _t: t, 
+          _id: r['Product ID'] || r.sku_id || r.id,
+          _n: r['Product Name'] || r.sku_name || '',
+          _s: r.salt_composition || r.Composition || 'N/A',
+          _f: r['Product Form'] || r.pack_size || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
+          _p: r.mrp || r.mrpp || 0
+        }));
+      } catch (err) {
+        console.error(`Error fetching table "${t}":`, err);
+        return []; // Fail gracefully so other tables can load
+      }
     }
 
     if (table === 'all') {
@@ -211,7 +219,7 @@
     const sQ = document.getElementById('saltInput').value;
     document.getElementById('resCount').innerText = filteredData.length;
 
-    if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found in Sahimed database.</div>'; return; }
+    if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found in database.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
       <div class="card ${item._t.replace(/ /g, '_')}">
