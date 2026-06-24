@@ -51,15 +51,19 @@
     .select-all-zone label { margin: 0; cursor: pointer; font-size: 15px; font-weight: 800; color: #1e40af; flex: 1; }
     .big-check { width: 24px; height: 24px; cursor: pointer; margin: 0; }
 
-    /* Results */
+    /* Results Card Colors by Component Table Source */
     .card { 
       background: white; padding: 20px; border-radius: 16px; margin-bottom: 12px; 
       display: flex; align-items: center; gap: 20px; border: 1px solid #e2e8f0; 
       transition: all 0.2s; 
     }
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .card.Dr_codes { border-left: 6px solid #f59e0b; }
-    .card.drugs_data { border-left: 6px solid #3b82f6; }
+    
+    /* Unique side-borders for distinct source visibility */
+    .card.Dr_codes { border-left: 6px solid #f59e0b; }       /* Amber/Orange */
+    .card.DR_Codes_June { border-left: 6px solid #8b5cf6; }  /* Purple */
+    .card.drugs_data { border-left: 6px solid #3b82f6; }     /* Blue */
+    .card.plazza_data { border-left: 6px solid #ec4899; }    /* Pink */
     
     .card-body { flex: 1; }
     .p-name { font-weight: 800; font-size: 18px; color: var(--primary); margin-bottom: 5px; }
@@ -81,6 +85,7 @@
       <select id="tableSelect" class="table-badge">
         <option value="all">Search All Tables</option>
         <option value="Dr codes">Dr codes</option>
+        <option value="DR_Codes_June">DR Codes June</option>
         <option value="drugs_data">Drugs Data</option>
         <option value="plazza_data">Plazza Data</option>
       </select>
@@ -153,21 +158,34 @@
     
     async function fetchTable(t) {
       let query = client.from(t).select('*');
-      const nCol = t === 'Dr codes' ? 'Product Name' : 'sku_name';
+      
+      // Dynamic column naming assignment matching schema conditions
+      const nCol = (t === 'Dr codes' || t === 'DR_Codes_June') ? 'Product Name' : 'sku_name';
       if (name) query = query.ilike(nCol, `%${name}%`);
-      if (salt) query = query.ilike('salt_composition', `%${salt}%`);
+      
+      // Handle the 'Composition' column explicitly layout out inside DR_Codes_June
+      const sCol = (t === 'DR_Codes_June') ? 'Composition' : 'salt_composition';
+      if (salt) query = query.ilike(sCol, `%${salt}%`);
+      
       const { data } = await query.limit(500);
       return (data || []).map(r => ({
-        ...r, _t: t, _id: r['Product ID'] || r.sku_id || r.id,
+        ...r, 
+        _t: t, 
+        _id: r['Product ID'] || r.sku_id || r.id,
         _n: r['Product Name'] || r.sku_name || '',
-        _s: r.salt_composition || 'N/A',
-        _f: r['Product Form'] || r.pack_size || 'N/A',
+        _s: r.salt_composition || r.Composition || 'N/A',
+        _f: r['Product Form'] || r.pack_size || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
         _p: r.mrp || r.mrpp || 0
       }));
     }
 
     if (table === 'all') {
-      const all = await Promise.all([fetchTable('Dr codes'), fetchTable('drugs_data'), fetchTable('plazza_data')]);
+      const all = await Promise.all([
+        fetchTable('Dr codes'), 
+        fetchTable('DR_Codes_June'), 
+        fetchTable('drugs_data'), 
+        fetchTable('plazza_data')
+      ]);
       masterData = all.flat();
     } else {
       masterData = await fetchTable(table);
@@ -196,7 +214,7 @@
     if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found in Sahimed database.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
-      <div class="card ${item._t.replace(' ', '_')}">
+      <div class="card ${item._t.replace(/ /g, '_')}">
         <input type="checkbox" class="item-check" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
         <div class="card-body">
           <div class="p-name">${highlight(item._n, nQ)}</div>
