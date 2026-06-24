@@ -60,7 +60,7 @@
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     
     .card.Dr_codes { border-left: 6px solid #f59e0b; }       /* Amber */
-    .card.JUNE { border-left: 6px solid #8b5cf6; }  /* Purple */
+    .card.June_Data { border-left: 6px solid #8b5cf6; }  /* Purple */
     .card.drugs_data { border-left: 6px solid #3b82f6; }     /* Blue */
     .card.plazza_data { border-left: 6px solid #ec4899; }    /* Pink */
     
@@ -84,7 +84,7 @@
       <select id="tableSelect" class="table-badge">
         <option value="all">Search All Tables</option>
         <option value="Dr codes">Dr codes</option>
-        <option value="JUNE">DR Codes June</option>
+        <option value="June_Data">DR Codes June_Data</option>
         <option value="drugs_data">Drugs Data</option>
         <option value="plazza_data">Plazza Data</option>
       </select>
@@ -163,10 +163,10 @@
       try {
         let query = client.from(t).select('*');
         
-        const nCol = (t === 'Dr codes' || t === 'JUNE') ? 'Product Name' : 'sku_name';
+        const nCol = (t === 'Dr codes' || t === 'June_Data') ? 'Product Name' : 'sku_name';
         if (name) query = query.ilike(nCol, `%${name}%`);
         
-        const sCol = (t === 'JUNE') ? 'Composition' : 'salt_composition';
+        const sCol = (t === 'June_Data') ? 'Composition' : 'salt_composition';
         if (salt) query = query.ilike(sCol, `%${salt}%`);
         
         const { data, error } = await query.limit(500);
@@ -190,7 +190,7 @@
     if (table === 'all') {
       const all = await Promise.all([
         fetchTable('Dr codes'), 
-        fetchTable('JUNE'), 
+        fetchTable('June_Data'), 
         fetchTable('drugs_data'), 
         fetchTable('plazza_data')
       ]);
