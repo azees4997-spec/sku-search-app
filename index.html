@@ -11,6 +11,11 @@
       --accent: #3b82f6;
       --bg: #f8fafc;
       --card-bg: #ffffff;
+      
+      /* Distinct Meta Attribute Colors */
+      --color-id: #f59e0b;      /* Amber */
+      --color-table: #8b5cf6;   /* Purple */
+      --color-pack: #ec4899;    /* Pink */
     }
 
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; line-height: 1.5; }
@@ -57,12 +62,18 @@
       transition: all 0.2s; 
     }
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .card.June_Data { border-left: 6px solid #8b5cf6; }  /* Distinct Purple Accent */
+    .card.June_Data { border-left: 6px solid #8b5cf6; }
     
     .card-body { flex: 1; }
     .p-name { font-weight: 800; font-size: 18px; color: var(--primary); margin-bottom: 5px; }
     .p-salt { font-size: 14px; color: #64748b; margin-bottom: 10px; }
-    .p-footer { display: flex; gap: 15px; font-size: 12px; color: #94a3b8; font-weight: 600; }
+    
+    /* Meta-Footer Attributes Styling */
+    .p-footer { display: flex; gap: 20px; font-size: 12px; font-weight: 700; }
+    .attr-id { color: var(--color-id); background: #fffbeb; padding: 2px 8px; border-radius: 6px; }
+    .attr-table { color: var(--color-table); background: #f5f3ff; padding: 2px 8px; border-radius: 6px; }
+    .attr-pack { color: var(--color-pack); background: #fdf2f8; padding: 2px 8px; border-radius: 6px; }
+    
     .p-price { font-size: 20px; font-weight: 900; color: var(--success); margin-left: auto; }
     
     .highlight { background: #fef08a; padding: 0 2px; border-radius: 2px; }
@@ -89,9 +100,9 @@
         <input type="text" id="saltInput" placeholder="e.g. Deflazacort" onkeydown="handleEnter(event)">
       </div>
       <div class="input-group">
-        <label>Quick Form Filter</label>
-        <select id="formFilter" onchange="applyFormFilter()">
-          <option value="all">All Forms</option>
+        <label>Packaging Detail Filter</label>
+        <select id="packFilter" onchange="applyPackFilter()">
+          <option value="all">All Packagings</option>
         </select>
       </div>
     </div>
@@ -150,7 +161,6 @@
     try {
       let query = client.from('June_Data').select('*');
       
-      // Match explicit June_Data columns exactly
       if (name) query = query.ilike('Product Name', `%${name}%`);
       if (salt) query = query.ilike('Composition', `%${salt}%`);
       
@@ -163,26 +173,26 @@
         _id: r['Product ID'] || r.id || 'N/A',
         _n: r['Product Name'] || '',
         _s: r['Composition'] || 'N/A',
-        _f: r['Product Form'] || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
+        _f: r['Packaging Detail'] || r['Packaging Deta'] || r['Packaging Details'] || r['Product Form'] || 'N/A',
         _p: r.mrp || r.mrpp || 0
       }));
 
     } catch (err) {
       console.error("Database fetch exception:", err);
-      document.getElementById('displayArea').innerHTML = '<div class="loading-state" style="color:red">Failed to extract table updates.</div>';
+      document.getElementById('displayArea').innerHTML = '<div class="loading-state" style="color:red">Failed to execute database lookup.</div>';
       return;
     }
 
-    // Populate filter variants
-    const forms = [...new Set(masterData.map(i => i._f))].filter(Boolean).sort();
-    document.getElementById('formFilter').innerHTML = '<option value="all">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
+    // Populate dropdown variants
+    const packages = [...new Set(masterData.map(i => i._f))].filter(Boolean).sort();
+    document.getElementById('packFilter').innerHTML = '<option value="all">All Packagings</option>' + packages.map(p => `<option value="${p}">${p}</option>`).join('');
 
     filteredData = [...masterData];
     render();
   };
 
-  window.applyFormFilter = () => {
-    const val = document.getElementById('formFilter').value;
+  window.applyPackFilter = () => {
+    const val = document.getElementById('packFilter').value;
     filteredData = val === 'all' ? [...masterData] : masterData.filter(i => i._f === val);
     document.getElementById('selectAllBox').checked = false;
     render();
@@ -203,9 +213,9 @@
           <div class="p-name">${highlight(item._n, nQ)}</div>
           <div class="p-salt"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
           <div class="p-footer">
-            <span>ID: ${item._id}</span>
-            <span>Table: June_Data</span>
-            <span>Form: ${item._f}</span>
+            <span class="attr-id">ID: ${item._id}</span>
+            <span class="attr-table">Table: June_Data</span>
+            <span class="attr-pack">Pkg: ${item._f}</span>
           </div>
         </div>
         <div class="p-price">₹${item._p}</div>
