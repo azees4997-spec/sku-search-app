@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>RXpress</title>
+  <title>RXpress Catalog Explorer</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -16,19 +16,18 @@
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; line-height: 1.5; }
     .container { max-width: 1200px; margin: 0 auto; }
     
-    /* Modern Search Section */
+    /* Dashboard Head Section */
     .dashboard-card { background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 25px; }
     
     .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .table-badge { padding: 8px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 700; font-size: 14px; color: var(--primary); outline: none; cursor: pointer; transition: 0.2s; }
-    .table-badge:hover { border-color: var(--accent); }
+    .table-badge { padding: 8px 16px; border-radius: 12px; background: #eff6ff; font-weight: 700; font-size: 14px; color: var(--primary); border: 1px solid #bfdbfe; }
 
     .search-row { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 20px; }
     .input-group label { display: block; font-size: 12px; font-weight: 800; color: var(--secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-    input, select { width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; transition: all 0.2s; background: #fcfcfc; }
+    input, select { width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; transition: all 0.2s; background: #fcfcfc; box-sizing: border-box; }
     input:focus { border-color: var(--accent); background: #fff; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-    /* Action Bar */
+    /* Action Bar Layout */
     .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 25px; border-top: 1px solid #f1f5f9; }
     .counter-group { display: flex; gap: 15px; }
     .chip { background: #f1f5f9; padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 700; color: var(--primary); }
@@ -40,7 +39,7 @@
     .btn-outline { background: #fff; border: 2px solid #e2e8f0; color: var(--secondary); }
     .btn-outline:hover { border-color: var(--success); color: var(--success); }
 
-    /* SELECT ALL SECTION */
+    /* Selection Utilities */
     .select-all-zone { 
       background: #eff6ff; padding: 15px 25px; margin-bottom: 15px; 
       border-radius: 15px; border: 2px dashed #3b82f6; 
@@ -51,18 +50,14 @@
     .select-all-zone label { margin: 0; cursor: pointer; font-size: 15px; font-weight: 800; color: #1e40af; flex: 1; }
     .big-check { width: 24px; height: 24px; cursor: pointer; margin: 0; }
 
-    /* Results Card Color Identifiers */
+    /* Dynamic Results Stylesheet */
     .card { 
       background: white; padding: 20px; border-radius: 16px; margin-bottom: 12px; 
       display: flex; align-items: center; gap: 20px; border: 1px solid #e2e8f0; 
       transition: all 0.2s; 
     }
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    
-    .card.Dr_codes { border-left: 6px solid #f59e0b; }       /* Amber */
-    .card.June_Data { border-left: 6px solid #8b5cf6; }  /* Purple */
-    .card.drugs_data { border-left: 6px solid #3b82f6; }     /* Blue */
-    .card.plazza_data { border-left: 6px solid #ec4899; }    /* Pink */
+    .card.June_Data { border-left: 6px solid #8b5cf6; }  /* Distinct Purple Accent */
     
     .card-body { flex: 1; }
     .p-name { font-weight: 800; font-size: 18px; color: var(--primary); margin-bottom: 5px; }
@@ -81,13 +76,7 @@
   <div class="dashboard-card">
     <div class="top-nav">
       <div style="font-size: 20px; font-weight: 900; color: var(--primary);">DATA EXPLORER</div>
-      <select id="tableSelect" class="table-badge">
-        <option value="all">Search All Tables</option>
-        <option value="Dr codes">Dr codes</option>
-        <option value="June_Data">DR Codes June_Data</option>
-        <option value="drugs_data">Drugs Data</option>
-        <option value="plazza_data">Plazza Data</option>
-      </select>
+      <div class="table-badge">Active Table: June_Data</div>
     </div>
 
     <div class="search-row">
@@ -154,51 +143,37 @@
   window.executeSearch = async function() {
     const name = document.getElementById('nameInput').value.trim();
     const salt = document.getElementById('saltInput').value.trim();
-    const table = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="loading-state">Querying Supabase...</div>';
+    document.getElementById('displayArea').innerHTML = '<div class="loading-state">Querying June_Data Table...</div>';
     document.getElementById('selectAllBox').checked = false;
     
-    async function fetchTable(t) {
-      try {
-        let query = client.from(t).select('*');
-        
-        const nCol = (t === 'Dr codes' || t === 'June_Data') ? 'Product Name' : 'sku_name';
-        if (name) query = query.ilike(nCol, `%${name}%`);
-        
-        const sCol = (t === 'June_Data') ? 'Composition' : 'salt_composition';
-        if (salt) query = query.ilike(sCol, `%${salt}%`);
-        
-        const { data, error } = await query.limit(500);
-        if (error) throw error;
+    try {
+      let query = client.from('June_Data').select('*');
+      
+      // Match explicit June_Data columns exactly
+      if (name) query = query.ilike('Product Name', `%${name}%`);
+      if (salt) query = query.ilike('Composition', `%${salt}%`);
+      
+      const { data, error } = await query.limit(500);
+      if (error) throw error;
 
-        return (data || []).map(r => ({
-          ...r, 
-          _t: t, 
-          _id: r['Product ID'] || r.sku_id || r.id,
-          _n: r['Product Name'] || r.sku_name || '',
-          _s: r.salt_composition || r.Composition || 'N/A',
-          _f: r['Product Form'] || r.pack_size || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
-          _p: r.mrp || r.mrpp || 0
-        }));
-      } catch (err) {
-        console.error(`Error fetching table "${t}":`, err);
-        return []; // Fail gracefully so other tables can load
-      }
+      masterData = (data || []).map(r => ({
+        ...r, 
+        _t: 'June_Data', 
+        _id: r['Product ID'] || r.id || 'N/A',
+        _n: r['Product Name'] || '',
+        _s: r['Composition'] || 'N/A',
+        _f: r['Product Form'] || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
+        _p: r.mrp || r.mrpp || 0
+      }));
+
+    } catch (err) {
+      console.error("Database fetch exception:", err);
+      document.getElementById('displayArea').innerHTML = '<div class="loading-state" style="color:red">Failed to extract table updates.</div>';
+      return;
     }
 
-    if (table === 'all') {
-      const all = await Promise.all([
-        fetchTable('Dr codes'), 
-        fetchTable('June_Data'), 
-        fetchTable('drugs_data'), 
-        fetchTable('plazza_data')
-      ]);
-      masterData = all.flat();
-    } else {
-      masterData = await fetchTable(table);
-    }
-
+    // Populate filter variants
     const forms = [...new Set(masterData.map(i => i._f))].filter(Boolean).sort();
     document.getElementById('formFilter').innerHTML = '<option value="all">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
 
@@ -222,14 +197,14 @@
     if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found in database.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => `
-      <div class="card ${item._t.replace(/ /g, '_')}">
+      <div class="card June_Data">
         <input type="checkbox" class="item-check" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
         <div class="card-body">
           <div class="p-name">${highlight(item._n, nQ)}</div>
           <div class="p-salt"><strong>Salt:</strong> ${highlight(item._s, sQ)}</div>
           <div class="p-footer">
             <span>ID: ${item._id}</span>
-            <span>Table: ${item._t}</span>
+            <span>Table: June_Data</span>
             <span>Form: ${item._f}</span>
           </div>
         </div>
