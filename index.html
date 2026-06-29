@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>RXpress</title>
+  <title>RXpress - June Data Explorer</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --primary: #1e3a8a;
       --secondary: #64748b;
       --success: #10b981;
-      --accent: #3b82f6;
+      --accent: #8b5cf6;
       --bg: #f8fafc;
       --card-bg: #ffffff;
     }
@@ -20,13 +20,12 @@
     .dashboard-card { background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 25px; }
     
     .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .table-badge { padding: 8px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 700; font-size: 14px; color: var(--primary); outline: none; cursor: pointer; transition: 0.2s; }
-    .table-badge:hover { border-color: var(--accent); }
+    .table-badge { padding: 8px 16px; border-radius: 12px; border: 2px solid #e2e8f0; font-weight: 700; font-size: 14px; color: var(--primary); background: #f1f5f9; }
 
     .search-row { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 20px; }
     .input-group label { display: block; font-size: 12px; font-weight: 800; color: var(--secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
     input, select { width: 100%; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; transition: all 0.2s; background: #fcfcfc; }
-    input:focus { border-color: var(--accent); background: #fff; outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    input:focus { border-color: var(--accent); background: #fff; outline: none; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1); }
 
     /* Action Bar */
     .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 25px; border-top: 1px solid #f1f5f9; }
@@ -43,7 +42,7 @@
     .btn-analytics.active { background: #8b5cf6; color: white; border-color: #7c3aed; }
 
     /* Analytics Dashboard Styling */
-    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
     .analytics-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
     .analytics-title { font-size: 12px; text-transform: uppercase; font-weight: 800; color: var(--secondary); margin-bottom: 5px; }
     .analytics-val { font-size: 24px; font-weight: 900; color: var(--primary); }
@@ -51,26 +50,22 @@
     /* SELECT ALL SECTION */
     .select-all-zone { 
       background: #eff6ff; padding: 15px 25px; margin-bottom: 15px; 
-      border-radius: 15px; border: 2px dashed #3b82f6; 
+      border-radius: 15px; border: 2px dashed #8b5cf6; 
       display: flex; align-items: center; gap: 15px; 
       cursor: pointer; transition: 0.2s; 
     }
-    .select-all-zone:hover { background: #dbeafe; }
-    .select-all-zone label { margin: 0; cursor: pointer; font-size: 15px; font-weight: 800; color: #1e40af; flex: 1; }
+    .select-all-zone:hover { background: #f5f3ff; }
+    .select-all-zone label { margin: 0; cursor: pointer; font-size: 15px; font-weight: 800; color: #6d28d9; flex: 1; }
     .big-check { width: 24px; height: 24px; cursor: pointer; margin: 0; }
 
-    /* Results Card Color Identifiers */
+    /* Results Card styling customized to match June_Data Purple Identifier styling */
     .card { 
       background: white; padding: 20px; border-radius: 16px; margin-bottom: 12px; 
       display: flex; align-items: center; gap: 20px; border: 1px solid #e2e8f0; 
+      border-left: 6px solid #8b5cf6;
       transition: all 0.2s; 
     }
     .card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    
-    .card.Dr_codes { border-left: 6px solid #f59e0b; }       
-    .card.DR_Codes_June { border-left: 6px solid #8b5cf6; }  
-    .card.drugs_data { border-left: 6px solid #3b82f6; }     
-    .card.plazza_data { border-left: 6px solid #ec4899; }    
     
     .card-body { flex: 1; }
     .p-name { font-weight: 800; font-size: 18px; color: var(--primary); margin-bottom: 5px; }
@@ -81,7 +76,7 @@
     .p-price { font-size: 20px; font-weight: 900; color: var(--success); margin-left: auto; }
     
     .highlight { background: #fef08a; padding: 0 2px; border-radius: 2px; }
-    .item-check { width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary); }
+    .item-check { width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent); }
     .loading-state { text-align: center; padding: 50px; color: var(--secondary); font-weight: 600; }
   </style>
 </head>
@@ -91,13 +86,7 @@
   <div class="dashboard-card">
     <div class="top-nav">
       <div style="font-size: 20px; font-weight: 900; color: var(--primary);">DATA EXPLORER</div>
-      <select id="tableSelect" class="table-badge">
-        <option value="all">Search All Tables</option>
-        <option value="Dr codes">Dr codes</option>
-        <option value="DR_Codes_June">DR Codes June</option>
-        <option value="drugs_data">Drugs Data</option>
-        <option value="plazza_data">Plazza Data</option>
-      </select>
+      <div class="table-badge">Active Table: June_Data</div>
     </div>
 
     <div class="search-row">
@@ -107,7 +96,7 @@
       </div>
       <div class="input-group">
         <label>Molecule / Composition</label>
-        <input type="text" id="saltInput" placeholder="e.g. Deflazacort" onkeydown="handleEnter(event)">
+        <input type="text" id="saltInput" placeholder="e.g. Paracetamol" onkeydown="handleEnter(event)">
       </div>
       <div class="input-group">
         <label>Quick Form / Packaging Filter</label>
@@ -125,7 +114,7 @@
       <div class="btn-group">
         <button id="analyticsToggle" class="btn-analytics" onclick="toggleAnalyticsView()">📊 Analytics Insights</button>
         <button class="btn-main" onclick="executeSearch()">Execute Search</button>
-        <button class="btn-outline" onclick="exportData(filteredData, 'view_export')">Export CSV</button>
+        <button class="btn-outline" onclick="exportData(filteredData, 'june_data_export')">Export CSV</button>
         <button class="btn-outline" style="background:#f8fafc" onclick="exportMarked()">Export Marked</button>
       </div>
     </div>
@@ -155,11 +144,10 @@
 
   window.handleEnter = (e) => { if (e.key === 'Enter') executeSearch(); };
 
-  // Lightweight Levenshtein algorithm implementation for local phonetic-fuzzy indexing match fallback
   function computeFuzzyScore(str1, str2) {
     const s1 = String(str1).toLowerCase();
     const s2 = String(str2).toLowerCase();
-    if (s1.includes(s2) || s2.includes(s1)) return 0; // Contains query perfectly
+    if (s1.includes(s2) || s2.includes(s1)) return 0; 
     
     const costs = [];
     for (let i = 0; i <= s1.length; i++) {
@@ -195,74 +183,54 @@
   window.searchBySaltDirect = function(saltName) {
     document.getElementById('nameInput').value = ""; 
     document.getElementById('saltInput').value = saltName;
-    document.getElementById('tableSelect').value = "all";
     executeSearch();
   };
 
   window.executeSearch = async function() {
     const name = document.getElementById('nameInput').value.trim();
     const salt = document.getElementById('saltInput').value.trim();
-    const table = document.getElementById('tableSelect').value;
 
-    document.getElementById('displayArea').innerHTML = '<div class="loading-state">Querying Supabase Database...</div>';
+    document.getElementById('displayArea').innerHTML = '<div class="loading-state">Querying June_Data...</div>';
     document.getElementById('selectAllBox').checked = false;
     
-    async function fetchTable(t) {
-      try {
-        let query = client.from(t).select('*');
-        const nCol = (t === 'Dr codes' || t === 'DR_Codes_June') ? 'Product Name' : 'sku_name';
-        const sCol = (t === 'DR_Codes_June') ? 'Composition' : 'salt_composition';
-        
-        // Use standard ilike filter unless name fuzzy matching option kicks in
-        if (name) query = query.ilike(nCol, `%${name}%`);
-        if (salt) query = query.ilike(sCol, `%${salt}%`);
-        
-        let { data, error } = await query.limit(400);
-        if (error) throw error;
+    try {
+      let query = client.from('June_Data').select('*');
+      
+      if (name) query = query.ilike('Product Name', `%${name}%`);
+      if (salt) query = query.ilike('Composition', `%${salt}%`);
+      
+      let { data, error } = await query.limit(500);
+      if (error) throw error;
 
-        // Feature: Phonetic / Fuzzy matching script triggered locally if data returns empty for precise filters
-        if ((!data || data.length === 0) && (name || salt)) {
-          let fallbackQuery = client.from(t).select('*').limit(600);
-          const fallbackRes = await fallbackQuery;
-          if (fallbackRes.data) {
-            data = fallbackRes.data.filter(item => {
-              const targetName = String(item[nCol] || '').toLowerCase();
-              const targetSalt = String(item[sCol] || '').toLowerCase();
-              
-              const nameScore = name ? computeFuzzyScore(targetName, name) : 0;
-              const saltScore = salt ? computeFuzzyScore(targetSalt, salt) : 0;
-              
-              // Max score cutoff range (lower numbers mean higher likeness accuracy)
-              return (name && nameScore <= 4) || (salt && saltScore <= 4);
-            });
-          }
+      // Fuzzy matching fallback if base query returns empty
+      if ((!data || data.length === 0) && (name || salt)) {
+        let fallbackRes = await client.from('June_Data').select('*').limit(800);
+        if (fallbackRes.data) {
+          data = fallbackRes.data.filter(item => {
+            const targetName = String(item['Product Name'] || '').toLowerCase();
+            const targetSalt = String(item['Composition'] || '').toLowerCase();
+            
+            const nameScore = name ? computeFuzzyScore(targetName, name) : 0;
+            const saltScore = salt ? computeFuzzyScore(targetSalt, salt) : 0;
+            
+            return (name && nameScore <= 4) || (salt && saltScore <= 4);
+          });
         }
-
-        return (data || []).map(r => ({
-          ...r, 
-          _t: t, 
-          _id: r['Product ID'] || r.sku_id || r.id,
-          _n: r['Product Name'] || r.sku_name || '',
-          _s: r.salt_composition || r.Composition || 'N/A',
-          _f: r['Product Form'] || r.pack_size || r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
-          _p: parseFloat(r.mrp || r.mrpp || 0)
-        }));
-      } catch (err) {
-        console.error(`Error processing execution on table ${t}:`, err);
-        return [];
       }
-    }
 
-    if (table === 'all') {
-      const all = await Promise.all([
-        fetchTable('Dr codes'), 
-        fetchTable('DR_Codes_June'), 
-        fetchTable('drugs_data'), 
-        fetchTable('plazza_data')
-      ]);
-      masterData = all.flat();
-    } else {
-      masterData = await fetchTable(table);
+      masterData = (data || []).map(r => ({
+        ...r, 
+        _t: 'June_Data', 
+        _id: r['Product ID'] || r.id,
+        _n: r['Product Name'] || '',
+        _s: r['Composition'] || 'N/A',
+        _f: r['Packaging Deta'] || r['Packaging Details'] || 'N/A',
+        _p: parseFloat(r.mrp || r.mrpp || 0)
+      }));
+
+    } catch (err) {
+      console.error("Error standardizing query executions:", err);
+      masterData = [];
     }
 
     const forms = [...new Set(masterData.map(i => i._f))].filter(Boolean).sort();
@@ -281,7 +249,6 @@
     if (analyticsActive) renderAnalytics();
   };
 
-  // Feature: Quick Analytics Panel Renderer Engine
   window.toggleAnalyticsView = () => {
     analyticsActive = !analyticsActive;
     const btn = document.getElementById('analyticsToggle');
@@ -299,45 +266,33 @@
   function renderAnalytics() {
     const panel = document.getElementById('analyticsPanel');
     if (!filteredData.length) {
-      panel.innerHTML = `<div class="analytics-card" style="text-align:center;color:var(--secondary)">Load active data queries to compile analytics reports</div>`;
+      panel.innerHTML = `<div class="analytics-card" style="text-align:center;color:var(--secondary)">No active query dataset loaded to visualize dashboard.</div>`;
       return;
     }
 
     const prices = filteredData.map(i => i._p).filter(p => p > 0);
     const avgPrice = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2) : '0.00';
     
-    // Evaluate minimum alternative cost item matching array parameters
     let cheapestItem = { _n: 'N/A', _p: Infinity };
     filteredData.forEach(item => {
       if (item._p > 0 && item._p < cheapestItem._p) cheapestItem = item;
     });
 
-    const tableDistribution = filteredData.reduce((acc, item) => {
-      acc[item._t] = (acc[item._t] || 0) + 1;
-      return acc;
-    }, {});
-
-    const distributionText = Object.entries(tableDistribution).map(([tbl, count]) => `${tbl}: <strong>${count}</strong>`).join(' | ');
-
     panel.innerHTML = `
       <div class="analytics-grid">
         <div class="analytics-card">
-          <div class="analytics-title">Total Active Matches</div>
+          <div class="analytics-title">Total Filtered Brands</div>
           <div class="analytics-val">${filteredData.length}</div>
         </div>
         <div class="analytics-card">
-          <div class="analytics-title">Average MRP Valuation</div>
+          <div class="analytics-title">Average Composition Price</div>
           <div class="analytics-val">₹${avgPrice}</div>
         </div>
-        <div class="analytics-card">
-          <div class="analytics-title">Cheapest Alternative Brand</div>
+        <div class="analytics-card" style="grid-column: span 1;">
+          <div class="analytics-title">Most Economical Alternative</div>
           <div class="analytics-val" style="font-size:16px;color:var(--success);margin-top:5px;">
             ${cheapestItem._n} <span style="font-weight:900">(₹${cheapestItem._p === Infinity ? 0 : cheapestItem._p})</span>
           </div>
-        </div>
-        <div class="analytics-card" style="grid-column: span 2; min-width:300px;">
-          <div class="analytics-title">Cross-Table Index Spread Distribution</div>
-          <div class="analytics-val" style="font-size:14px;font-weight:500;margin-top:8px;line-height:1.6;">${distributionText}</div>
         </div>
       </div>
     `;
@@ -349,7 +304,7 @@
     const sQ = document.getElementById('saltInput').value;
     document.getElementById('resCount').innerText = filteredData.length;
 
-    if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found in database matching selection parameters.</div>'; return; }
+    if (!filteredData.length) { area.innerHTML = '<div class="loading-state">No matches found inside June_Data table resources.</div>'; return; }
 
     area.innerHTML = filteredData.map((item, idx) => {
       const escapeSalt = String(item._s).replace(/'/g, "\\'");
@@ -358,14 +313,13 @@
         : 'N/A';
 
       return `
-        <div class="card ${item._t.replace(/ /g, '_')}">
+        <div class="card">
           <input type="checkbox" class="item-check" ${markedItems.has(item._id) ? 'checked' : ''} onchange="toggleMark(${idx})">
           <div class="card-body">
             <div class="p-name">${highlight(item._n, nQ)}</div>
             <div class="p-salt"><strong>Salt:</strong> ${displaySalt}</div>
             <div class="p-footer">
               <span>ID: ${item._id}</span>
-              <span>Table: ${item._t}</span>
               <span>Form: ${item._f}</span>
             </div>
           </div>
@@ -402,7 +356,7 @@
     link.click();
   };
 
-  window.exportMarked = () => exportData(Array.from(markedItems.values()), 'marked_items');
+  window.exportMarked = () => exportData(Array.from(markedItems.values()), 'marked_june_items');
 </script>
 </body>
 </html>
